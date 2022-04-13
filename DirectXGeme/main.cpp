@@ -124,6 +124,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 	}
 	//コマンドアロケータを生成
+	result = device->CreateCommandAllocator(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(&comdAllocator));
+	assert(SUCCEEDED(result));
+	//コマンドリストの生成
 	result = device->CreateCommandList(0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		comdAllocator, nullptr,
@@ -200,7 +205,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//バックバッファの番号を取得（２つなので０番か１番）
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
-		//1.リソースバリアで書き込み可脳に変更
+		//1.リソースバリアで書き込み可能に変更
 		D3D12_RESOURCE_BARRIER barrierDesc{};
 		barrierDesc.Transition.pResource = backBuffers[bbIndex];//バックバッファを指定
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;//表示状態から
@@ -228,6 +233,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		result = commandList->Close();
 		assert(SUCCEEDED(result));
 		//コマンドリストの実行
+		ID3D12CommandList* commandLists[] = { commandList };
+		commandQueue->ExecuteCommandLists(1, commandLists);
+
+		//画面に表示するバッファをフリップ（裏表の入れ替え）
+		result = swapChain->Present(1, 0);
+		assert(SUCCEEDED(result));
+		//コマンドの実行完了を待つ
+		commandQueue->Signal(fence, ++fenceVal);
+		if (fence->GetCompletedValue() != fenceVal) {
+			HANDLE event = CreateEvent(nullptr, false, false, nullptr);
+			fence->SetEventOnCompletion(fenceVal, event);
+			WaitForSingleObject(event, INFINITE);
+			CloseHandle(event);
+		}
+		//キューのクリア
+		result = comdAllocator->Reset();
+		assert(SUCCEEDED(result));
+		//再びコマンドリストをためる準備
+		result = commandList->Reset(comdAllocator, nullptr);
+		assert(SUCCEEDED(result));
+
 		//DirectX毎フレーム処理　ここまで
 	}
 
