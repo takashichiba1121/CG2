@@ -33,6 +33,8 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wapram, LPARAM lparam) {
 }
 //windowsアプリのエントリーポイント（main関数）
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+	//コンソールへの文字出力
+	OutputDebugStringA("Hello,DirectX!!!\n");
 	const int window_width = 1280;//横
 	const int window_heigit = 720;//縦
 
@@ -198,25 +200,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	UINT64 fenceVal = 0;
 
 	result = device->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+	//DirectX初期化処理
 	
-	//DirectInputの初期化
-	IDirectInput8* directInput = nullptr;
-	result = DirectInput8Create(
-		w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
-		(void**)&directInput,nullptr);
-	assert(SUCCEEDED(result));
-	//キーボードデバイスの生成
-	IDirectInputDevice8* keyboard = nullptr;
-	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(result));
-
-	//入力データ形式のセット
-	result = keyboard->SetDataFormat(&c_dfDIKeyboard);
-	assert(SUCCEEDED(result));
-	//排他制御レベルのセット
-	result = keyboard->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(result));
 	//描画初期化処理
 
 	//頂点データ
@@ -391,19 +376,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 		//DirectX毎フレーム処理　ここから
-		keyboard->Acquire();
-		//すべてのキーの入力状態を取得する
-		BYTE key[256] = {};
-		keyboard->GetDeviceState(sizeof(key), key);
-		//数字の０キーが押されてたら
-		if (key[DIK_0])
-		{
-			OutputDebugStringA("Hit 0\n");//出力ウインドウに[Hit 0]と表示
-		}
-		if (key[DIK_SPACE])//スペースキーが押されていたら
-		{
-
-		}
 		//バックバッファの番号を取得（２つなので０番か１番）
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -426,7 +398,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 		//ビューポート設定コマンド
 		D3D12_VIEWPORT viewport{};
-		viewport.Width = window_width/2;
+		viewport.Width = window_width;
 		viewport.Height = window_heigit;
 		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
@@ -438,8 +410,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//シザー短径
 		D3D12_RECT scissorRect{};
 		scissorRect.left = 0;
-		scissorRect.right = scissorRect.left + window_width/4;
-		scissorRect.top = scissorRect.top + window_heigit/2;
+		scissorRect.right = scissorRect.left + window_width;
+		scissorRect.top = 0;
 		scissorRect.bottom = scissorRect.top + window_heigit;
 
 		//シザ―短径設定コマンドを、コマンドリストに積む
