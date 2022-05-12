@@ -212,9 +212,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//頂点データ
 	XMFLOAT3 vertices[] = {
-		{-0.5f,-0.5f,0.0f},
-		{-0.5f,+0.5f,0.0f},
-		{+0.5f,-0.5f,0.0f},
+		{-0.5f,-0.5f,0.0f},//左下
+		{+0.5f,-0.5f,0.0f},//右下
+		{-0.5f,0.0f,0.0f},//左中
+		{+0.5f,0.0f,0.0f},//右中
+		{-0.5f,+0.5f,0.0f},//左上
+		{+0.5f,+0.5f,0.0f},//右上
 	};
 	//頂点データ全体のサイズ=頂点データ一つ分のサイズ*頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -344,10 +347,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;//加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;//ソースの値を100%使う
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//デストの値を0%使う
-	////加算合成
-	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	//blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
-	//blenddesc.DestBlend = D3D12_BLEND_ONE;//デストの値を100%使う
+	//加算合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
+	blenddesc.DestBlend = D3D12_BLEND_ONE;//デストの値を100%使う
 	////減算合成
 	//blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;//デストからソースを減算
 	//blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
@@ -356,10 +359,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
 	//blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;//1.0f-デストカラーの値
 	//blenddesc.DestBlend = D3D12_BLEND_ZERO;//使わない
-	//半透明合成
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;//1.0f-ソースのアルファ値
+	////半透明合成
+	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	//blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
+	//blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;//1.0f-ソースのアルファ値
 	//頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
 	pipelineDesc.InputLayout.NumElements = _countof(inputLayout);
@@ -427,7 +430,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
 	assert(SUCCEEDED(result));
 	//値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);//RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
 
 	float A = 1;
 	float G = 0;
@@ -488,7 +491,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetPipelineState(pipelineState);
 		commandList->SetGraphicsRootSignature(rootSignature);
 		//プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
 		//頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 		//定数バッファビュー（CBV）の設定コマンド
@@ -506,13 +509,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//命令クローズ
 		result = commandList->Close();
 		assert(SUCCEEDED(result));
-		if (A > 0 || G < 1)
-		{
-			A-=0.1;
-			G += 0.1;
-		}
-		//値を書き込むと自動的に転送される
-		constMapMaterial->color = XMFLOAT4(A, G, 0, 0.5f);//RGBAで半透明の赤
 		//コマンドリストの実行
 		ID3D12CommandList* commandLists[] = { commandList };
 		commandQueue->ExecuteCommandLists(1, commandLists);
