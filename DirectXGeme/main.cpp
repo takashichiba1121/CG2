@@ -19,6 +19,7 @@
 using namespace DirectX;
 using namespace std;
 
+const float PI = 3.141592f;
 //定数バッファ用データ構造体（マテリアル）
 struct ConstBufferDataMaterial {
 	XMFLOAT4 color;//色（RGBA）
@@ -233,12 +234,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{-0.5f,-0.5f,0.0f},//左下
 		{+0.5f,-0.5f,0.0f},//右下
 		{-0.5f,+0.5f,0.0f},//左上
-		{+0.5f,+0.5f,0.0f},//右上
 	};
+	float transformX = 0.0f;
+	float transformY = 0.0f;
+	float rotation = 0.0f;
+	float scale = 1.0f;
+
+	float affin[3][3] = {
+		{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f} };
 	uint16_t indices[] =
 	{
 		0,1,2,//三角形１
-		1,2,3//三角形２
 	};
 	//頂点データ全体のサイズ=頂点データ一つ分のサイズ*頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -298,10 +304,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMFLOAT3* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
+
+	 //vertices[0] = {-0.25f, -0.25f, 0.0};
 	//前頂点に対して
-	for (int i = 0; i < _countof(vertices); i++) {
-		vertMap[i] = vertices[i]; //座標コピー
-	}
+	//for (int i = 0; i < _countof(vertices); i++) {
+	//	vertMap[i] = vertices[i]; //座標コピー
+	//}
 	//繋がり解除
 	vertBuff->Unmap(0, nullptr);
 
@@ -501,11 +509,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 		//DirectX毎フレーム処理　ここから
-		//キーボード情報の取得開始
-		keyboard->Acquire();
-		//全キーの入力状態を取得する
-		BYTE key[256] = {};
-		keyboard->GetDeviceState(sizeof(key), key);
 		//バックバッファの番号を取得（２つなので０番か１番）
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -524,6 +527,78 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//3.画面クリア
 		FLOAT clearColor[] = { 0.1f,0.25f,0.5f,0.0f };//青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+		//キーボード情報の取得開始
+		keyboard->Acquire();
+		//全キーの入力状態を取得する
+		BYTE keys[256] = {};
+		keyboard->GetDeviceState(sizeof(keys), keys);
+
+		// キー入力
+
+   //平行移動
+		if (keys[DIK_W]) {
+			transformY += 0.005f;
+		}
+
+		if (keys[DIK_S]) {
+			transformY -= 0.005f;
+		}
+
+		if (keys[DIK_A]) {
+			transformX -= 0.005f;
+		}
+
+		if (keys[DIK_D]) {
+			transformX += 0.005f;
+		}
+
+		// 拡大縮小
+		if (keys[DIK_Z]) {
+			scale -= 0.1f;
+		}
+
+		if (keys[DIK_C]) {
+			scale += 0.1f;
+		}
+
+
+		// 回転
+		if (keys[DIK_Q]) {
+			rotation -= PI / 32;
+		}
+
+		if (keys[DIK_E]) {
+			rotation += PI / 32;
+		}
+
+
+		// アフィン行列の生成
+		affin[0][0] = scale * cos(rotation);
+		affin[0][1] = scale * (-sin(rotation));
+		affin[0][2] = transformX;
+
+		affin[1][0] = scale * sin(rotation);
+		affin[1][1] = scale * cos(rotation);
+		affin[1][2] = transformY;
+
+		affin[2][0] = 0.0f;
+		affin[2][1] = 0.0f;
+		affin[2][2] = 1.0f;
+
+		// アフィン変換
+		for (int i = 0; i < _countof(vertices); i++) {
+			vertices[i].x = vertices[i].x * affin[0][0] +
+				vertices[i].y * affin[0][1] + 1.0f * affin[0][2];
+			vertices[i].y = vertices[i].x * affin[1][0] +
+				vertices[i].y * affin[1][1] + 1.0f * affin[1][2];
+			vertices[i].z = vertices[i].x * affin[2][0] +
+				vertices[i].y * affin[2][1] + 1.0f * affin[2][2];
+		}
+
+		// 全頂点に対して
+		for (int i = 0; i < _countof(vertices); i++) {
+			vertMap[i] = vertices[i]; // 座標をコピー
+		}
 		//描画コマンドここから
 
 		//ビューポート設定コマンド
