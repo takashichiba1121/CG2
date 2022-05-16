@@ -257,6 +257,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	resDesc.MipLevels = 1;
 	resDesc.SampleDesc.Count = 1;
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//インデックスバッファの生成
+	ID3D12Resource* indexBuff = nullptr;
+	result = device->CreateCommittedResource(
+		&heapProp,//ヒープ設定
+		D3D12_HEAP_FLAG_NONE,
+		&resDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&indexBuff));
+	//インデックスバッファをマッピング
+	uint16_t* indexMap = nullptr;
+	result = indexBuff->Map(0,nullptr,(void**)&indexMap);
+	//全インデックスに対して
+	for (int i = 0; i < _countof(indices); i++)
+	{
+		indexMap[i] = indices[i];//インデックスをコピー
+	}
+	//マッピング解除
+	indexBuff->Unmap(0, nullptr);
 	//GPU上のバッファに対応した仮想メモリ（メインメモリ上）を取得
 	XMFLOAT3* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
@@ -276,6 +295,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vbView.SizeInBytes = sizeVB;
 	//頂点一つ分のデータサイズ
 	vbView.StrideInBytes = sizeof(XMFLOAT3);
+
+	//インデックスバッファビューの作成
+	D3D12_INDEX_BUFFER_VIEW ibView{};
+	ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
+	ibView.Format = DXGI_FORMAT_R16_UINT;
+	ibView.SizeInBytes = sizeIB;
 
 	ID3DBlob* vsBlob = nullptr;//頂点シェーダーオブジェクト
 	ID3DBlob* psBlob = nullptr;//ピクセルシェーダーオブジェクト
@@ -442,12 +467,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//定数バッファのマッピング
 	ConstBufferDataMaterial* constMapMaterial = nullptr;
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
-	assert(SUCCEEDED(result));
 	//値を書き込むと自動的に転送される
 	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
-
-	float A = 1;
-	float G = 0;
+	assert(SUCCEEDED(result));
 	//ゲームループ
 	while (true) {
 		//メッセージがある？
@@ -510,11 +532,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 		//定数バッファビュー（CBV）の設定コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+		//インデックスバッファビューの設定コマンド
+		commandList->IASetIndexBuffer(&ibView);
 		//描画コマンド
-		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//すべての頂点を使って描画
+		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0,0);//すべての頂点を使って描画
 
 		//描画コマンドここまで
-
+		
 		// 5.リソースバリアを戻す
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;//描画状態から
 		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
