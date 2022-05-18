@@ -227,21 +227,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//DirectX初期化処理
 
 	//描画初期化処理
-
-	//頂点データ
-	XMFLOAT3 vertices[] = {
-		{-0.5f,-0.5f,0.0f},//左下
-		{+0.5f,-0.5f,0.0f},//右下
-		{-0.5f,+0.5f,0.0f},//左上
-		{+0.5f,+0.5f,0.0f},//右上
+	//頂点データ構造体
+	struct Vertex
+	{
+		XMFLOAT3 pos; //xyz座標
+		XMFLOAT2 uv;  //uv座標
 	};
-	uint16_t indices[] =
+	//頂点データ
+	Vertex vertices[] = {
+		{{-0.4f,-0.7f,0.0f},{0.0f,1.0f} },//左下
+		{{-0.4f,+0.7f,0.0f},{0.0f,0.0f} },//左上
+		{{+0.4f,-0.7f,0.0f},{1.0f,1.0f} },//右下
+		{{+0.4f,+0.7f,0.0f},{1.0f,0.0f} },//右上
+	};
+	//インデックスデータ
+	unsigned short indices[] =
 	{
 		0,1,2,//三角形１
 		1,2,3//三角形２
 	};
 	//頂点データ全体のサイズ=頂点データ一つ分のサイズ*頂点データの要素数
-	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
+	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 	//頂点バッファの設定
 	D3D12_HEAP_PROPERTIES heapProp{};  //ヒープ設定
 	heapProp.Type = D3D12_HEAP_TYPE_UPLOAD; //GPUへの転送用
@@ -286,7 +292,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		IID_PPV_ARGS(&indexBuff));
 	//インデックスバッファをマッピング
 	uint16_t* indexMap = nullptr;
-	result = indexBuff->Map(0,nullptr,(void**)&indexMap);
+	result = indexBuff->Map(0, nullptr, (void**)&indexMap);
 	//全インデックスに対して
 	for (int i = 0; i < _countof(indices); i++)
 	{
@@ -295,7 +301,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//マッピング解除
 	indexBuff->Unmap(0, nullptr);
 	//GPU上のバッファに対応した仮想メモリ（メインメモリ上）を取得
-	XMFLOAT3* vertMap = nullptr;
+	Vertex* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
 	//前頂点に対して
@@ -312,7 +318,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点バッファのサイズ
 	vbView.SizeInBytes = sizeVB;
 	//頂点一つ分のデータサイズ
-	vbView.StrideInBytes = sizeof(XMFLOAT3);
+	vbView.StrideInBytes = sizeof(vertices[0]);
 
 	//インデックスバッファビューの作成
 	D3D12_INDEX_BUFFER_VIEW ibView{};
@@ -378,9 +384,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			D3D12_APPEND_ALIGNED_ELEMENT,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
 			},//一行で書いたほうが見やすい
+			{
+			"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
+			},//一行で書いたほうが見やすい
 	};
 
-	//グラフィックスパイプライン設定
+	//設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineDesc{};
 	//シェーダーの設定
 	pipelineDesc.VS.pShaderBytecode = vsBlob->GetBufferPointer();
@@ -400,7 +411,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//レンダーターゲットのブレンド設定
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
-	blenddesc.BlendEnable = true;//ブレンドを有効にする
+	blenddesc.BlendEnable = false;//ブレンドを有効にする
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;//加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;//ソースの値を100%使う
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//デストの値を0%使う
@@ -488,6 +499,82 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//値を書き込むと自動的に転送される
 	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
 	assert(SUCCEEDED(result));
+
+	//横方向ピクセル数
+	const size_t textureWidth = 256;
+	//縦方向ピクセル数
+	const size_t textureHeight = 256;
+	//配列の要素数
+	const size_t imageDataCount = textureWidth * textureHeight;
+	//画像イメージデータ配列
+	XMFLOAT4* imageData = new XMFLOAT4[imageDataCount];//必ず後で解放する
+
+	//全ピクセルの色を初期化
+	for (size_t i = 0; i < imageDataCount; i++) {
+		imageData[i].x = 1.0f;//R
+		imageData[i].x = 0.0f;//G
+		imageData[i].x = 0.0f;//B
+		imageData[i].x = 1.0f;//A
+	}
+	//ヒープ設定
+	D3D12_HEAP_PROPERTIES textureHeapProp{};
+	textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
+	textureHeapProp.CPUPageProperty = 
+	D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	//リソース設定
+	D3D12_RESOURCE_DESC textureResourceDesc{};
+	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureResourceDesc.Width = textureWidth;//幅
+	textureResourceDesc.Height = textureHeight;//高さ
+	textureResourceDesc.DepthOrArraySize = 1;
+	textureResourceDesc.MipLevels = 1;
+	textureResourceDesc.SampleDesc.Count = 1;
+	//テクスチャバッファを生成
+	ID3D12Resource* texBuff = nullptr;
+	result = device->CreateCommittedResource(
+		&textureHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&textureResourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&texBuff));
+	//テクスチャバッファにデータを転送
+	result = texBuff->WriteToSubresource(
+		0,
+		nullptr,//全領域へコピー
+		imageData,//元データアドレス
+		sizeof(XMFLOAT4)*textureWidth,//1ラインサイズ
+		sizeof(XMFLOAT4)*imageDataCount//全サイズ
+		);
+	delete[] imageData;
+	//SRVの最大個数
+	const size_t kMaxSRVCount = 2056;
+
+	//デスクリプタヒープの設定
+	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	srvHeapDesc.Flags= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;//シェーダーから見えるように
+	srvHeapDesc.NumDescriptors = kMaxSRVCount;
+
+	//設定を元にSRV用デスクリプタヒープを生成
+	ID3D12DescriptorHeap* srvHeap = nullptr;
+	result = device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
+	assert(SUCCEEDED(result));
+	//SRVヒープの先頭ハンドルを取得
+	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = srvHeap->GetCPUDescriptorHandleForHeapStart();
+
+	//シェーダーリソースビュー設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};//設定構造体
+	srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;//RGBA float
+	srvDesc.Shader4ComponentMapping =
+	D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
+	srvDesc.Texture2D.MipLevels = 1;
+
+	//ハンドルの指す位置にシェーダーリソースビュー作成
+	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 	//ゲームループ
 	while (true) {
 		//メッセージがある？
@@ -558,10 +645,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//インデックスバッファビューの設定コマンド
 		commandList->IASetIndexBuffer(&ibView);
 		//描画コマンド
-		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0,0);//すべての頂点を使って描画
+		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
 		//描画コマンドここまで
-		
+
 		// 5.リソースバリアを戻す
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;//描画状態から
 		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
