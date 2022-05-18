@@ -441,19 +441,44 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	pipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;//0～255指定のRGBA
 	pipelineDesc.SampleDesc.Count = 1; //1ピクセルにつき一回サンプリング
 
+	//デスクリプタレンジの設定
+	D3D12_DESCRIPTOR_RANGE descriptorRange{};
+	descriptorRange.NumDescriptors = 1;//一度の描画に使うテクスチャが一枚なので１
+	descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange.BaseShaderRegister = 0;//テクスチャレジスタ0番
+	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 	//ルートパラメーターの設定
-	D3D12_ROOT_PARAMETER rootParam{};
-	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//定数バッファ
-	rootParam.Descriptor.ShaderRegister = 0;//定数バッファ番号
-	rootParam.Descriptor.RegisterSpace = 0;//デフォルト値
-	rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダーから見える
+	D3D12_ROOT_PARAMETER rootParams[2] = {};
+	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//定数バッファ
+	rootParams[0].Descriptor.ShaderRegister = 0;//定数バッファ番号
+	rootParams[0].Descriptor.RegisterSpace = 0;//デフォルト値
+	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダーから見える
+	//テクスチャレジスタ0番
+	rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;//種類
+	rootParams[1].DescriptorTable.pDescriptorRanges = &descriptorRange;//デスクリプタレンジ
+	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;//デスクリプタレンジ数
+	rootParams[1].ShaderVisibility= D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダーから見える
+	//テクスチャサンプラー設定
+	D3D12_STATIC_SAMPLER_DESC samplerDesc{};
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//横繰り返し（タイリング）
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//縦繰り返し（タイリング）
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//奥行繰り返し（タイリング）
+	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;//ボーダーの時は黒
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;//全てリニア補完
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;//ミップマップ最大値
+	samplerDesc.MinLOD = 0.0f;//ミップマップ最小値
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダーからのみ使用可能
 	//ルートシグネチャ
 	ID3D12RootSignature* rootSignature;
 	//ルートシグネチャの設定
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	rootSignatureDesc.pParameters = &rootParam;//ルートパラメーターの先頭アドレス
-	rootSignatureDesc.NumParameters = 1;//ルートパラメータ数
+	rootSignatureDesc.pParameters = rootParams;//ルートパラメーターの先頭アドレス
+	rootSignatureDesc.NumParameters = _countof(rootParams);//ルートパラメータ数
+	rootSignatureDesc.pStaticSamplers = &samplerDesc;
+	rootSignatureDesc.NumStaticSamplers = 1;
 	//ルートシグネチャのシリアライズ
 	ID3DBlob* rootSigBlob = nullptr;
 	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
@@ -512,9 +537,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//全ピクセルの色を初期化
 	for (size_t i = 0; i < imageDataCount; i++) {
 		imageData[i].x = 1.0f;//R
-		imageData[i].x = 0.0f;//G
-		imageData[i].x = 0.0f;//B
-		imageData[i].x = 1.0f;//A
+		imageData[i].y = 0.0f;//G
+		imageData[i].z = 0.0f;//B
+		imageData[i].w = 1.0f;//A
 	}
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
@@ -575,6 +600,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
+
 	//ゲームループ
 	while (true) {
 		//メッセージがある？
@@ -642,6 +668,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 		//定数バッファビュー（CBV）の設定コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+		//SRVヒープの設定コマンド
+		commandList->SetDescriptorHeaps(1, &srvHeap);
+		//SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
+		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
+		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 		//インデックスバッファビューの設定コマンド
 		commandList->IASetIndexBuffer(&ibView);
 		//描画コマンド
