@@ -1,3 +1,4 @@
-﻿  main.cpp
-  LINK : 前回のインクリメンタル リンクで C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe が見つからなかったか、ビルドされませんでした。フル リンクを行います。
-  DirectXGeme.vcxproj -> C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe
+﻿  Triangle.cpp
+C:\K021G1120\二年次\CG2\DirectXGeme\Triangle.cpp(299,19): warning C4244: '=': 'int' から 'FLOAT' への変換です。データが失われる可能性があります。
+C:\K021G1120\二年次\CG2\DirectXGeme\Triangle.cpp(300,20): warning C4244: '=': 'int' から 'FLOAT' への変換です。データが失われる可能性があります。
+  DirectXGeme.vcxproj -> C:\K021G1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe
