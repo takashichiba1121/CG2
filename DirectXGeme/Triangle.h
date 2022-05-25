@@ -18,13 +18,26 @@
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
 
+using namespace DirectX;
+using namespace std;
+
+
 class Triangle
 {
 public:
-	ID3D12PipelineState* pipelineState;
-	ID3D12RootSignature* rootSignature;
+	struct Vertex
+	{
+		XMFLOAT3 pos; //xyz座標
+		XMFLOAT2 uv;  //uv座標
+	};
+	ID3D12PipelineState* pipelineState=nullptr;
+	ID3D12RootSignature* rootSignature=nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
-	D3D12_INDEX_BUFFER_VIEW ibView{};
+	D3D12_INDEX_BUFFER_VIEW ibView;
+	HRESULT result;
+	Vertex vertex1;
+	Vertex vertex2;
+	Vertex vertex3;
 	//インデックスデータ
 	unsigned short indices[3] =
 	{
@@ -32,9 +45,10 @@ public:
 	};
 	//コンストラクタ
 	Triangle();
+	Triangle(Vertex vertex1, Vertex vertex2, Vertex vertex3);
 	//デストラクタ
 	~Triangle();
 	//描画初期化処理
-	void Initialize(HRESULT result,ID3D12Device* device = nullptr);
-	void Draw(ID3D12GraphicsCommandList* commandList, int window_width, int window_heigit);
+	void Initialize(ID3D12Device* device);
+	void Draw(ID3D12CommandQueue* commandQueue, D3D12_RESOURCE_BARRIER barrierDesc,ID3D12GraphicsCommandList* commandList, int window_width, int window_heigit, D3D12_VIEWPORT viewport);
 };

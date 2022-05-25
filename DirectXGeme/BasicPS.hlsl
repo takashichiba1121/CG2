@@ -12,5 +12,5 @@ float4 Graph(VSOutput input) :SV_TARGET
 //}
 float4 main(VSOutput input) : SV_TARGET
 {
-	return float4(input.uv,0,1);
+	return float4(input.uv,1,1);
 }

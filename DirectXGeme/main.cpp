@@ -227,8 +227,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(result));
 	//DirectX初期化処理
-	Triangle* obj1 = new Triangle;
-	obj1->Initialize(result, device);
+	Triangle* obj = new Triangle[10]
+	{
+		{ { { -1.0f, +0.9f,0.0f},{1.0f,1.0f}},{{-1.0f, +1.0f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.9,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.8f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.9f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.8,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.7f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.8f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.7,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.6f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.7f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.6,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.5f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.6f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.5,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.4f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.5f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.4,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.3f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.4f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.3,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.2f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.3f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.2,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.1f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.2f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.1,0.0f},{1.0f,1.0f}} },
+		{ { { -1.0f, +0.0f,0.0f},{1.0f,1.0f}},{{-1.0f, +0.1f,0.0f},{1.0f,1.0f}},{{-0.9f, +0.0,0.0f},{1.0f,1.0f}} },
+	};
+	//頂点データ
+	for (int i = 0; i < 10; i++)
+	{
+		obj[i].Initialize(device);
+	}
 	//描画初期化処理
 	////頂点データ構造体
 	//struct Vertex
@@ -665,15 +681,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		FLOAT clearColor[] = { 0.1f,0.25f,0.5f,0.0f };//青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 		//描画コマンドここから
-		obj1->Draw(commandList, window_width, window_heigit);
-		////ビューポート設定コマンド
-		//D3D12_VIEWPORT viewport{};
-		//viewport.Width = window_width;
-		//viewport.Height = window_heigit;
-		//viewport.TopLeftX = 0;
-		//viewport.TopLeftY = 0;
-		//viewport.MinDepth = 0.0f;
-		//viewport.MaxDepth = 1.0f;
+		//ビューポート設定コマンド
+		D3D12_VIEWPORT viewport{};
+		viewport.Width = window_width;
+		viewport.Height = window_heigit;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		for (int i = 0; i < 10; i++)
+		{
+			obj[i].Draw(commandQueue, barrierDesc, commandList, window_width, window_heigit,viewport);
+		}
 		////ビューポート設定コマンドを、コマンドリストに積む
 		//commandList->RSSetViewports(1, &viewport);
 
@@ -741,7 +760,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//DirectX毎フレーム処理　ここまで
 
 	}
-
+	delete[] obj;
 	//ウインドウクラスを登録解除
 	UnregisterClass(w.lpszClassName, w.hInstance);
 

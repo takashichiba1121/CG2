@@ -22,25 +22,26 @@ using namespace DirectX;
 using namespace std;
 Triangle::Triangle()
 {
-
+	vertex1 = { {0.0f,0.0f,0.0f},{1.0f,1.0f} };
+	vertex2 = { {0.0f,0.0f,0.0f},{1.0f,1.0f} };
+	vertex3 = { {0.0f,0.0f,0.0f},{1.0f,1.0f} };
+}
+Triangle::Triangle(Vertex vertex1, Vertex vertex2, Vertex vertex3)
+{
+	this->vertex1=vertex1;
+	this->vertex2=vertex2;
+	this->vertex3=vertex3;
 }
 Triangle::~Triangle()
 {
 
 }
- void Triangle::Initialize(HRESULT result,ID3D12Device* device)
+ void Triangle::Initialize(ID3D12Device* device)
 {
-	 struct Vertex
-	 {
-		 XMFLOAT3 pos; //xyz座標
-		 XMFLOAT2 uv;  //uv座標
-	 };
-	 //頂点データ
 	 Vertex vertices[] = {
-		 {{-0.4f,-0.7f,0.0f},{0.0f,1.0f} },//左下
-		 {{-0.4f,+0.7f,0.0f},{0.0f,0.0f} },//左上
-		 {{+0.4f,-0.7f,0.0f},{1.0f,1.0f} },//右下
-		 {{+0.4f,+0.7f,0.0f},{1.0f,0.0f} },//右上
+		{vertex1},//左下
+		{vertex2 },//左上
+		{vertex3 },//右下
 	 };
 	 //頂点データ全体のサイズ=頂点データ一つ分のサイズ*頂点データの要素数
 	 UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
@@ -288,20 +289,11 @@ Triangle::~Triangle()
 	 pipelineDesc.pRootSignature = rootSignature;
 
 	 //パイプランスステートの生成
-	 pipelineState = nullptr;
 	 result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	 assert(SUCCEEDED(result));
 }
-void Triangle::Draw(ID3D12GraphicsCommandList* commandList, int window_width, int window_heigit)
+void Triangle::Draw(ID3D12CommandQueue* commandQueue,D3D12_RESOURCE_BARRIER barrierDesc,ID3D12GraphicsCommandList* commandList, int window_width, int window_heigit, D3D12_VIEWPORT viewport)
 {
-	//ビューポート設定コマンド
-	D3D12_VIEWPORT viewport{};
-	viewport.Width = window_width;
-	viewport.Height = window_heigit;
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
 	//ビューポート設定コマンドを、コマンドリストに積む
 	commandList->RSSetViewports(1, &viewport);
 
