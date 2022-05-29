@@ -1,15 +1,5 @@
 #pragma once
-#define DIRECTINPUT_VERSION 0x0800 //DirectInputのバージョン指定
-#include<dinput.h>
-#include<d3dcompiler.h>
-#include<Windows.h>
-#include <tchar.h>
-#include<iostream>
 #include<d3d12.h>
-#include<dxgi1_6.h>
-#include<cassert>
-#include<vector>
-#include<string>
 #include<DirectXMath.h>
 using namespace DirectX;
 using namespace std;
