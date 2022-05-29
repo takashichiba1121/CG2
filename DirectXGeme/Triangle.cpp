@@ -292,20 +292,8 @@ Triangle::~Triangle()
 	 result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	 assert(SUCCEEDED(result));
 }
-void Triangle::Draw(ID3D12CommandQueue* commandQueue,D3D12_RESOURCE_BARRIER barrierDesc,ID3D12GraphicsCommandList* commandList, int window_width, int window_heigit, D3D12_VIEWPORT viewport)
+void Triangle::Draw(ID3D12GraphicsCommandList* commandList)
 {
-	//ビューポート設定コマンドを、コマンドリストに積む
-	commandList->RSSetViewports(1, &viewport);
-
-	//シザー短径
-	D3D12_RECT scissorRect{};
-	scissorRect.left = 0;
-	scissorRect.right = scissorRect.left + window_width;
-	scissorRect.top = 0;
-	scissorRect.bottom = scissorRect.top + window_heigit;
-
-	//シザ―短径設定コマンドを、コマンドリストに積む
-	commandList->RSSetScissorRects(1, &scissorRect);
 	//パイプラインステートとルートシグネチャの設定コマンド
 	commandList->SetPipelineState(pipelineState);
 	commandList->SetGraphicsRootSignature(rootSignature);

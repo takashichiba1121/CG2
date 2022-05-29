@@ -11,13 +11,6 @@
 #include<vector>
 #include<string>
 #include<DirectXMath.h>
-#include<DirectXTex.h>
-#pragma comment(lib,"d3dcompiler.lib")
-#pragma comment(lib,"d3d12.lib")
-#pragma comment(lib,"dxgi.lib")
-#pragma comment(lib,"dinput8.lib")
-#pragma comment(lib,"dxguid.lib")
-
 using namespace DirectX;
 using namespace std;
 
@@ -43,6 +36,7 @@ public:
 	{
 		0,1,2,//三角形１
 	};
+public:
 	//コンストラクタ
 	Triangle();
 	Triangle(Vertex vertex1, Vertex vertex2, Vertex vertex3);
@@ -50,5 +44,5 @@ public:
 	~Triangle();
 	//描画初期化処理
 	void Initialize(ID3D12Device* device);
-	void Draw(ID3D12CommandQueue* commandQueue, D3D12_RESOURCE_BARRIER barrierDesc,ID3D12GraphicsCommandList* commandList, int window_width, int window_heigit, D3D12_VIEWPORT viewport);
+	void Draw(ID3D12GraphicsCommandList* commandList);
 };
