@@ -182,7 +182,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::vector<ID3D12Resource*>backBuffers;
 	backBuffers.resize(swapChainDesc.BufferCount);
 
-	//スワップチェーンのすべてのバッファについｔれ処理する
+	//スワップチェーンのすべてのバッファについて処理する
 	for (size_t i = 0; i < backBuffers.size(); i++) {
 		//スワップチェーンからバッファを取得
 		swapChain->GetBuffer((UINT)i, IID_PPV_ARGS(&backBuffers[i]));
