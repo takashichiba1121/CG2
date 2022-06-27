@@ -232,10 +232,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	//頂点データ
 	Vertex vertices[] = {
-		{{-0.4f,-0.7f,0.0f},{0.0f,1.0f} },//左下
-		{{-0.4f,+0.7f,0.0f},{0.0f,0.0f} },//左上
-		{{+0.4f,-0.7f,0.0f},{1.0f,1.0f} },//右下
-		{{+0.4f,+0.7f,0.0f},{1.0f,0.0f} },//右上
+		{{  0.0f,100.0f,0.0f},{0.0f,1.0f} },//左下
+		{{  0.0f,  0.0f,0.0f},{0.0f,0.0f} },//左上
+		{{100.0f,100.0f,0.0f},{1.0f,1.0f} },//右下
+		{{100.0f,  0.0f,0.0f},{1.0f,0.0f} },//右上
 	};
 	//インデックスデータ
 	unsigned short indices[] =
@@ -446,7 +446,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//ルートパラメーターの設定
-	D3D12_ROOT_PARAMETER rootParams[2] = {};
+	D3D12_ROOT_PARAMETER rootParams[3] = {};
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//定数バッファ
 	rootParams[0].Descriptor.ShaderRegister = 0;//定数バッファ番号
 	rootParams[0].Descriptor.RegisterSpace = 0;//デフォルト値
@@ -456,6 +456,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParams[1].DescriptorTable.pDescriptorRanges = &descriptorRange;//デスクリプタレンジ
 	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;//デスクリプタレンジ数
 	rootParams[1].ShaderVisibility= D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダーから見える
+	//定数バッファ1番目
+	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//種類
+	rootParams[2].Descriptor.ShaderRegister = 1;				//定数バッファ番号
+	rootParams[2].Descriptor.RegisterSpace = 0;					//デフォルト値
+	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//すべてのシェーダーから見える
 	//テクスチャサンプラー設定
 	D3D12_STATIC_SAMPLER_DESC samplerDesc{};
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//横繰り返し（タイリング）
@@ -520,7 +525,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 		//定数バッファの生成
+		result = device->CreateCommittedResource(
+			&cbHeapProp,//ヒープ設定
+			D3D12_HEAP_FLAG_NONE,
+			&cbResourceDesc,//リソース設定
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&constBuffTransform));
 
+		//定数バッファのマッピング
+		result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);//マッピング
+		assert(SUCCEEDED(result));
+
+		//並行投影行列の計算
+		constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
+			0.0f, window_width,
+			window_heigit, 0.0f,
+			0.0f, 1.0f);
+		////単位行列を代入
+		//constMapTransform->mat = XMMatrixIdentity();
+		//constMapTransform->mat.r[0].m128_f32[0] = 2.0f / window_width;
+		//constMapTransform->mat.r[1].m128_f32[1] = -2.0f / window_heigit;
+		//constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
+		//constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
 	}
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
@@ -726,6 +753,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 		//インデックスバッファビューの設定コマンド
 		commandList->IASetIndexBuffer(&ibView);
+		//定数バッファビュー(CBV)の設定コマンド
+		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 		//描画コマンド
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
