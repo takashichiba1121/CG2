@@ -232,10 +232,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	//頂点データ
 	Vertex vertices[] = {
-		{{  0.0f,100.0f,0.0f},{0.0f,1.0f} },//左下
-		{{  0.0f,  0.0f,0.0f},{0.0f,0.0f} },//左上
-		{{100.0f,100.0f,0.0f},{1.0f,1.0f} },//右下
-		{{100.0f,  0.0f,0.0f},{1.0f,0.0f} },//右上
+		{{-50.0f,-50.0f,0.0f},{0.0f,1.0f} },//左下
+		{{-50.0f, 50.0f,0.0f},{0.0f,0.0f} },//左上
+		{{ 50.0f,-50.0f,0.0f},{1.0f,1.0f} },//右下
+		{{ 50.0f, 50.0f,0.0f},{1.0f,0.0f} },//右上
 	};
 	//インデックスデータ
 	unsigned short indices[] =
@@ -536,19 +536,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//定数バッファのマッピング
 		result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);//マッピング
 		assert(SUCCEEDED(result));
-
-		//並行投影行列の計算
-		constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
-			0.0f, window_width,
-			window_heigit, 0.0f,
-			0.0f, 1.0f);
-		////単位行列を代入
-		//constMapTransform->mat = XMMatrixIdentity();
-		//constMapTransform->mat.r[0].m128_f32[0] = 2.0f / window_width;
-		//constMapTransform->mat.r[1].m128_f32[1] = -2.0f / window_heigit;
-		//constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
-		//constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
 	}
+		////並行投影行列の計算
+		//constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
+		//	0.0f, window_width,
+		//	window_heigit, 0.0f,
+		//	0.0f, 1.0f);
+		XMMATRIX matProjection=XMMatrixPerspectiveFovLH(
+			XMConvertToRadians(45.0f),		   //上下が書く45度
+			(float)window_width / window_width,//アスペクト比（画面横幅/画面縦幅）
+			0.1f, 1000.0f					   //前端、奥端
+		);
+		
+		//ビュー変換行列
+		XMMATRIX matView;
+		XMFLOAT3 eye(0, 0, -100);//視点ベクトル
+		XMFLOAT3 target(0, 0, 0);//注視点座標
+		XMFLOAT3 up(0, 1, 0);	 //上方向ベクトル
+		matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+
+		//行列の計算
+		constMapTransform->mat = matView*matProjection;
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
 	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;//GPUへの転送用
@@ -677,7 +685,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
-
+	float angle = 0.0f;//カメラの回転角
 	//ゲームループ
 	while (true) {
 		//メッセージがある？
@@ -714,6 +722,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//3.画面クリア
 		FLOAT clearColor[] = { 0.1f,0.25f,0.5f,0.0f };//青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		//更新処理ここから
+		if(key[DIK_D]||key[DIK_A])
+		{
+			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f);}
+			else if(key[DIK_A]){angle-= XMConvertToRadians(1.0f);}
+
+			//angleラジアンだけY軸まわりに回転。半径は-100
+			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		}
+		//行列の計算
+		constMapTransform->mat = matView * matProjection;
+		//更新処理ここまで
+
 		//描画コマンドここから
 		//ビューポート設定コマンド
 		D3D12_VIEWPORT viewport{};
