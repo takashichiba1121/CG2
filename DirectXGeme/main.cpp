@@ -455,7 +455,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;//種類
 	rootParams[1].DescriptorTable.pDescriptorRanges = &descriptorRange;//デスクリプタレンジ
 	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;//デスクリプタレンジ数
-	rootParams[1].ShaderVisibility= D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダーから見える
+	rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダーから見える
 	//定数バッファ1番目
 	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//種類
 	rootParams[2].Descriptor.ShaderRegister = 1;				//定数バッファ番号
@@ -537,26 +537,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);//マッピング
 		assert(SUCCEEDED(result));
 	}
-		////並行投影行列の計算
-		//constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
-		//	0.0f, window_width,
-		//	window_heigit, 0.0f,
-		//	0.0f, 1.0f);
-		XMMATRIX matProjection=XMMatrixPerspectiveFovLH(
-			XMConvertToRadians(45.0f),		   //上下が書く45度
-			(float)window_width / window_width,//アスペクト比（画面横幅/画面縦幅）
-			0.1f, 1000.0f					   //前端、奥端
-		);
-		
-		//ビュー変換行列
-		XMMATRIX matView;
-		XMFLOAT3 eye(0, 0, -100);//視点ベクトル
-		XMFLOAT3 target(0, 0, 0);//注視点座標
-		XMFLOAT3 up(0, 1, 0);	 //上方向ベクトル
-		matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
-		//行列の計算
-		constMapTransform->mat = matView*matProjection;
+
+	////並行投影行列の計算
+	//constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
+	//	0.0f, window_width,
+	//	window_heigit, 0.0f,
+	//	0.0f, 1.0f);
+	XMMATRIX matProjection = XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),		   //上下が書く45度
+		(float)window_width / window_width,//アスペクト比（画面横幅/画面縦幅）
+		0.1f, 1000.0f					   //前端、奥端
+	);
+
+	//ビュー変換行列
+	XMMATRIX matView;
+	XMFLOAT3 eye(0, 0, -200);//視点ベクトル
+	XMFLOAT3 target(0, 0, 0);//注視点座標
+	XMFLOAT3 up(0, 1, 0);	 //上方向ベクトル
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+
+	//行列の計算
+	constMapTransform->mat = matView * matProjection;
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
 	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;//GPUへの転送用
@@ -612,8 +614,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ScratchImage mipChain{};
 	//ミニマップ生成
 	result = GenerateMipMaps(
-	scratchImg.GetImages(),scratchImg.GetImageCount(),scratchImg.GetMetadata(),
-		TEX_FILTER_DEFAULT,0,mipChain);
+		scratchImg.GetImages(), scratchImg.GetImageCount(), scratchImg.GetMetadata(),
+		TEX_FILTER_DEFAULT, 0, mipChain);
 	if (SUCCEEDED(result)) {
 		scratchImg = std::move(mipChain);
 		metadata = scratchImg.GetMetadata();
@@ -623,8 +625,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
 	textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
-	textureHeapProp.CPUPageProperty = 
-	D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	textureHeapProp.CPUPageProperty =
+		D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
 	//リソース設定
 	D3D12_RESOURCE_DESC textureResourceDesc{};
@@ -665,7 +667,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//デスクリプタヒープの設定
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	srvHeapDesc.Flags= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;//シェーダーから見えるように
+	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;//シェーダーから見えるように
 	srvHeapDesc.NumDescriptors = kMaxSRVCount;
 
 	//設定を元にSRV用デスクリプタヒープを生成
@@ -679,13 +681,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};//設定構造体
 	srvDesc.Format = resDesc.Format;//RGBA float
 	srvDesc.Shader4ComponentMapping =
-	D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
 	srvDesc.Texture2D.MipLevels = resDesc.MipLevels;
 
 	//ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
+
 	float angle = 0.0f;//カメラの回転角
+
+	XMFLOAT3 position = { 0.0f,0.0f,0.0f };
+
+	XMFLOAT3 scale = { 1.0f,1.0f,1.0f };
+
+	XMFLOAT3 rotation = { 0.0f,0.0f,0.0f };
+
+	//ワールド変換行列
+	XMMATRIX matWorld;
+
+	XMMATRIX matScale;//スケーリング行列
+
+	XMMATRIX matRot;//回転行列
+
+	XMMATRIX matTrans;//平行移動行列
+
+	float PI = 3.141592f;
 	//ゲームループ
 	while (true) {
 		//メッセージがある？
@@ -724,18 +744,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		//更新処理ここから
-		if(key[DIK_D]||key[DIK_A])
+		if (key[DIK_D] || key[DIK_A])
 		{
-			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f);}
-			else if(key[DIK_A]){angle-= XMConvertToRadians(1.0f);}
+			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+			else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
 
 			//angleラジアンだけY軸まわりに回転。半径は-100
-			eye.x = -100 * sinf(angle);
-			eye.z = -100 * cosf(angle);
+			eye.x = -200 * sinf(angle);
+			eye.z = -200 * cosf(angle);
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
+
+		//いずれかのキーを押していたら
+		if (key[DIK_UP]) { position.z += 1.0f; }
+		else if (key[DIK_DOWN]) { position.z -= 1.0f; }
+		if (key[DIK_RIGHT]) { position.x += 1.0f; }
+		else if (key[DIK_LEFT]) { position.x -= 1.0f; }
+
+		//ワールド変換行列
+		matWorld = XMMatrixIdentity();
+
+		matScale= XMMatrixIdentity();
+		matScale *= XMMatrixScaling(scale.x, scale.y, scale.z);
+
+		matRot= XMMatrixIdentity();//回転行列
+		matRot *= XMMatrixRotationZ(XMConvertToRadians(PI / 180 * rotation.z));//Z軸回りに0度回転
+		matRot *= XMMatrixRotationX(XMConvertToRadians(PI / 180 * rotation.x));//X軸回りに15度回転
+		matRot *= XMMatrixRotationY(XMConvertToRadians(PI / 180 * rotation.y));//Y軸回りに度回転
+
+		matTrans=XMMatrixIdentity();//平行移動行列
+		matTrans *= XMMatrixTranslation(position.x, position.y, position.z);//(-50,0,0)平行移動
+
+		matWorld *= matScale;//ワールド座標にスケーリングを反映
+		matWorld *= matRot;//ワールド行列に回転を反映
+		matWorld *= matTrans;//ワールド行列に平行移動を反映
 		//行列の計算
-		constMapTransform->mat = matView * matProjection;
+		constMapTransform->mat = matWorld * matView * matProjection;
 		//更新処理ここまで
 
 		//描画コマンドここから
