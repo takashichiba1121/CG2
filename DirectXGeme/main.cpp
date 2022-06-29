@@ -690,11 +690,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	float angle = 0.0f;//カメラの回転角
 
-	XMFLOAT3 position = { 0.0f,0.0f,0.0f };
+	XMFLOAT3 position = { 0.0f,-50.0f,0.0f };
 
 	XMFLOAT3 scale = { 1.0f,1.0f,1.0f };
 
-	XMFLOAT3 rotation = { 0.0f,0.0f,0.0f };
+	XMFLOAT3 rotation = { 30.0f,30.0f,30.0f };
 
 	//ワールド変換行列
 	XMMATRIX matWorld;
@@ -752,6 +752,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//angleラジアンだけY軸まわりに回転。半径は-100
 			eye.x = -200 * sinf(angle);
 			eye.z = -200 * cosf(angle);
+			matView= XMMatrixIdentity();
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
 
