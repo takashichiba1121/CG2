@@ -291,7 +291,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{{-5.0f, 5.0f, 5.0f},{0.0f,0.0f} },//左上
 		{{ 5.0f,-5.0f, 5.0f},{1.0f,1.0f} },//右下
 		{{ 5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
-		//後ろ
+		//後
 		{{-5.0f,-5.0f,-5.0f},{0.0f,1.0f} },//左下
 		{{-5.0f, 5.0f,-5.0f},{0.0f,0.0f} },//左上
 		{{ 5.0f,-5.0f,-5.0f},{1.0f,1.0f} },//右下
@@ -308,12 +308,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{{ 5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
 		//下
 		{{-5.0f,-5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f,-5.0f, 5.0f},{0.0f,1.0f} },//左上
+		{{-5.0f,-5.0f, 5.0f},{0.0f,0.0f} },//左上
 		{{ 5.0f,-5.0f,-5.0f},{1.0f,1.0f} },//右下
 		{{ 5.0f,-5.0f, 5.0f},{1.0f,0.0f} },//右上
 		//上
 		{{-5.0f, 5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f, 5.0f, 5.0f},{0.0f,1.0f} },//左上
+		{{-5.0f, 5.0f, 5.0f},{0.0f,0.0f} },//左上
 		{{ 5.0f, 5.0f,-5.0f},{1.0f,1.0f} },//右下
 		{{ 5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
 	};
@@ -647,13 +647,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//	0.0f, 1.0f);
 	XMMATRIX matProjection = XMMatrixPerspectiveFovLH(
 		XMConvertToRadians(45.0f),		   //上下が書く45度
-		(float)window_width / window_width,//アスペクト比（画面横幅/画面縦幅）
+		(float)window_width / window_heigit,//アスペクト比（画面横幅/画面縦幅）
 		0.1f, 1000.0f					   //前端、奥端
 	);
 
 	//ビュー変換行列
 	XMMATRIX matView;
-	XMFLOAT3 eye(0, 0, -200);//視点ベクトル
+	XMFLOAT3 eye(0, 0, -100);//視点ベクトル
 	XMFLOAT3 target(0, 0, 0);//注視点座標
 	XMFLOAT3 up(0, 1, 0);	 //上方向ベクトル
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
@@ -709,7 +709,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ScratchImage scratchImg{};
 	//WICテクスチャのロード
 	result = LoadFromWICFile(
-		L"Resources/texture.png",//Resourcesフォルダのtexture.png
+		L"Resources/mario.jpg",//Resourcesフォルダのtexture.png
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 	ScratchImage mipChain{};
@@ -791,7 +791,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	float angle = 0.0f;//カメラの回転角
 
-	XMFLOAT3 position = { 0.0f,-50.0f,0.0f };
+	XMFLOAT3 position = { 0.0f,-30.0f,0.0f };
 
 	XMFLOAT3 scale = { 1.0f,1.0f,1.0f };
 
@@ -855,20 +855,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
 
 			//angleラジアンだけY軸まわりに回転。半径は-100
-			eye.x = -200 * sinf(angle);
-			eye.z = -200 * cosf(angle);
-			matView = XMMatrixIdentity();
-			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-		}
-		//更新処理ここから
-		if (key[DIK_Q] || key[DIK_E])
-		{
-			if (key[DIK_Q]) { angle += XMConvertToRadians(1.0f); }
-			else if (key[DIK_E]) { angle -= XMConvertToRadians(1.0f); }
-
-			//angleラジアンだけY軸まわりに回転。半径は-100
-			eye.y = -200 * sinf(angle);
-			eye.z = -200 * cosf(angle);
+			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
 			matView = XMMatrixIdentity();
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
