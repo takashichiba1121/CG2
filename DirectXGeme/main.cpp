@@ -280,64 +280,65 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点データ構造体
 	struct Vertex
 	{
-		XMFLOAT3 pos; //xyz座標
-		XMFLOAT2 uv;  //uv座標
+		XMFLOAT3 pos;    //xyz座標
+		XMFLOAT3 normal; //法線ベクトル
+		XMFLOAT2 uv;     //uv座標
 	};
 	//頂点データ
 	Vertex vertices[] = {
 		//x      y	   z	 u    v
 		//前
-		{{-5.0f,-5.0f, 5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f, 5.0f, 5.0f},{0.0f,0.0f} },//左上
-		{{ 5.0f,-5.0f, 5.0f},{1.0f,1.0f} },//右下
-		{{ 5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
+		{{-5.0f,-5.0f,-5.0f},{}, {0.0f,1.0f} },//左下
+		{{-5.0f, 5.0f,-5.0f},{},{0.0f,0.0f} },//左上
+		{{ 5.0f,-5.0f,-5.0f},{},{1.0f,1.0f} },//右下
+		{{ 5.0f, 5.0f,-5.0f},{},{1.0f,0.0f} },//右上
 		//後
-		{{-5.0f,-5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f, 5.0f,-5.0f},{0.0f,0.0f} },//左上
-		{{ 5.0f,-5.0f,-5.0f},{1.0f,1.0f} },//右下
-		{{ 5.0f, 5.0f,-5.0f},{1.0f,0.0f} },//右上
+		{{-5.0f,-5.0f, 5.0f},{},{0.0f,1.0f} },//左下
+		{{-5.0f, 5.0f, 5.0f},{},{0.0f,0.0f} },//左上
+		{{ 5.0f,-5.0f, 5.0f},{},{1.0f,1.0f} },//右下
+		{{ 5.0f, 5.0f, 5.0f},{},{1.0f,0.0f} },//右上
 		//左
-		{{-5.0f,-5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f,-5.0f, 5.0f},{0.0f,0.0f} },//左上
-		{{-5.0f, 5.0f,-5.0f},{1.0f,1.0f} },//右下
-		{{-5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
+		{{-5.0f,-5.0f,-5.0f},{},{0.0f,1.0f} },//左下
+		{{-5.0f,-5.0f, 5.0f},{},{0.0f,0.0f} },//左上
+		{{-5.0f, 5.0f,-5.0f},{},{1.0f,1.0f} },//右下
+		{{-5.0f, 5.0f, 5.0f},{},{1.0f,0.0f} },//右上
 		//右
-		{{ 5.0f,-5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{ 5.0f,-5.0f, 5.0f},{0.0f,0.0f} },//左上
-		{{ 5.0f, 5.0f,-5.0f},{1.0f,1.0f} },//右下
-		{{ 5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
+		{{ 5.0f,-5.0f,-5.0f},{},{0.0f,1.0f} },//左下
+		{{ 5.0f,-5.0f, 5.0f},{},{0.0f,0.0f} },//左上
+		{{ 5.0f, 5.0f,-5.0f},{},{1.0f,1.0f} },//右下
+		{{ 5.0f, 5.0f, 5.0f},{},{1.0f,0.0f} },//右上
 		//下
-		{{-5.0f,-5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f,-5.0f, 5.0f},{0.0f,0.0f} },//左上
-		{{ 5.0f,-5.0f,-5.0f},{1.0f,1.0f} },//右下
-		{{ 5.0f,-5.0f, 5.0f},{1.0f,0.0f} },//右上
+		{{-5.0f,-5.0f,-5.0f},{},{0.0f,1.0f} },//左下
+		{{-5.0f,-5.0f, 5.0f},{},{0.0f,0.0f} },//左上
+		{{ 5.0f,-5.0f,-5.0f},{},{1.0f,1.0f} },//右下
+		{{ 5.0f,-5.0f, 5.0f},{},{1.0f,0.0f} },//右上
 		//上
-		{{-5.0f, 5.0f,-5.0f},{0.0f,1.0f} },//左下
-		{{-5.0f, 5.0f, 5.0f},{0.0f,0.0f} },//左上
-		{{ 5.0f, 5.0f,-5.0f},{1.0f,1.0f} },//右下
-		{{ 5.0f, 5.0f, 5.0f},{1.0f,0.0f} },//右上
+		{{-5.0f, 5.0f,-5.0f},{},{0.0f,1.0f} },//左下
+		{{-5.0f, 5.0f, 5.0f},{},{0.0f,0.0f} },//左上
+		{{ 5.0f, 5.0f,-5.0f},{},{1.0f,1.0f} },//右下
+		{{ 5.0f, 5.0f, 5.0f},{},{1.0f,0.0f} },//右上
 	};
 	//インデックスデータ
 	unsigned short indices[] =
 	{
 		//前
 		0,1,2,//三角形1
-		1,2,3,//三角形2
+		1,3,2,//三角形2
 		//後ろ
-		4,5,6,//三角形1
-		5,6,7,//三角形2
+		6,5,4,//三角形1
+		6,7,5,//三角形2
 		//左
 		8,9,10,//三角形1
-		9,10,11,//三角形2
+		9,11,10,//三角形2
 		//右
-		12,13,14,//三角形1
-		13,14,15,//三角形2
+		14,13,12,//三角形1
+		14,15,13,//三角形2
 		//下
-		16,17,18,//三角形1
-		17,18,19,//三角形2
+		18,17,16,//三角形1
+		18,19,17,//三角形2
 		//上
 		20,21,22,//三角形1
-		21,22,23,//三角形2
+		21,23,22,//三角形2
 	};
 	//頂点データ全体のサイズ=頂点データ一つ分のサイズ*頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
@@ -473,15 +474,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点レイアウト
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{
-			"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
+		"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
+		D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
+		},//vyz座標(一行で書いたほうが見やすい)
+		{
+			"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
 			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
-			},//一行で書いたほうが見やすい
-			{
-			"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
-			},//一行で書いたほうが見やすい
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+		},//法線ベクトル(一行で書いたほうが見やすい)
+		{
+		"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,
+		D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
+		},//uv(一行で書いたほうが見やすい)
 	};
 
 	//設定
@@ -495,7 +501,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//サンプルマスクの設定
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	//ラスタライザの設定
-	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
+	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶし
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度グリッピングを有効に
 	//ブレンドステート
