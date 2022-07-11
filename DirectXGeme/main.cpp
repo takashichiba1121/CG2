@@ -396,7 +396,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexBuff->Unmap(0, nullptr);
 
 	//法線の計算
-	for (int i = 0; i < (sizeof(indices)/sizeof(indices[0])) / 3; i++)
+	for (int i = 0; i < _countof(indices) / 3; i++)
 	{//三角形1つごとの計算していく
 		//三角形のインデックスを取り出して、一時的な変数に入れる
 		unsigned short indices0 = indices[i * 3 + 0];
