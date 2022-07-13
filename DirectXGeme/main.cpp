@@ -18,11 +18,17 @@
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
 #include"Triangle.h"
+#include"object3d.h"
 
 using namespace DirectX;
 using namespace std;
 using namespace Microsoft::WRL;
 
+
+//定数バッファ用データ構造体（マテリアル）
+struct ConstBufferDataMaterial {
+	XMFLOAT4 color;//色（RGBA）
+};
 
 //ウィンドウプロージャー
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wapram, LPARAM lparam) {
@@ -630,44 +636,58 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
 
-	//定数バッファ用データ構造体（マテリアル）
-	struct ConstBufferDataMaterial {
-		XMFLOAT4 color;//色（RGBA）
-	};
-
-	//定数バッファ用データ構造体（3D変換行列）
-	struct ConstBufferDataTransform
-	{
-		XMMATRIX mat; //3D変換行列
-	};
 	ID3D12Resource* constBuffTransform0 = nullptr;
 	ConstBufferDataTransform* constMapTransform0 = nullptr;
-	{
-		//ヒープ設定
-		D3D12_HEAP_PROPERTIES cbHeapProp{};
-		cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
-		//リソース設定
-		D3D12_RESOURCE_DESC cbResourceDesc{};
-		cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		cbResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;//256バイトアラインメント
-		cbResourceDesc.Height = 1;
-		cbResourceDesc.DepthOrArraySize = 1;
-		cbResourceDesc.MipLevels = 1;
-		cbResourceDesc.SampleDesc.Count = 1;
-		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		////ヒープ設定
+		//D3D12_HEAP_PROPERTIES cbHeapProp{};
+		//cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
+		////リソース設定
+		//D3D12_RESOURCE_DESC cbResourceDesc{};
+		//cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		//cbResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;//256バイトアラインメント
+		//cbResourceDesc.Height = 1;
+		//cbResourceDesc.DepthOrArraySize = 1;
+		//cbResourceDesc.MipLevels = 1;
+		//cbResourceDesc.SampleDesc.Count = 1;
+		//cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		//定数バッファの生成
-		result = device->CreateCommittedResource(
-			&cbHeapProp,//ヒープ設定
-			D3D12_HEAP_FLAG_NONE,
-			&cbResourceDesc,//リソース設定
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&constBuffTransform0));
+		//3Dオブジェクトの数
+		const size_t kObjectConst = 50;
+		//3Dオブジェクトの配列
+		Object3D object3ds[kObjectConst];
+		
+		//配列内の全オブジェクトに対して
+		for (int i = 0; i < _countof(object3ds); i++) {
+			//初期化
+			object3ds[i].Initialize(device.Get());
 
-		//定数バッファのマッピング
-		result = constBuffTransform0->Map(0, nullptr, (void**)&constMapTransform0);//マッピング
-		assert(SUCCEEDED(result));
+			//ここからは親子構造のサンプル
+			//先頭以外なら
+			if (i > 0) {
+				//一つ前のオブジェクトを親オブジェクトとする
+				//object3ds[i].parent = &object3ds[i - 1];
+				//親オブジェクトの9割の大きさ
+				object3ds[i].scale = { 0.9f,0.9f,0.9f};
+				//親オブジェクトに対してZ軸まわりに30度回転
+				object3ds[i].rotation = { 0.0f,0.0f,XMConvertToRadians(30.0f) };
+
+				//親オブジェクトに対してZ方向-8.0ずらす
+				object3ds[i].position = { 0.0f,0.0f,-8.0f };
+			}
+		
+		////定数バッファの生成
+		//result = device->CreateCommittedResource(
+		//	&cbHeapProp,//ヒープ設定
+		//	D3D12_HEAP_FLAG_NONE,
+		//	&cbResourceDesc,//リソース設定
+		//	D3D12_RESOURCE_STATE_GENERIC_READ,
+		//	nullptr,
+		//	IID_PPV_ARGS(&constBuffTransform0));
+		//assert(SUCCEEDED(result));
+
+		////定数バッファのマッピング
+		//result = constBuffTransform0->Map(0, nullptr, (void**)&constMapTransform0);//マッピング
+		//assert(SUCCEEDED(result));
 	}
 	ID3D12Resource* constBuffTransform1 = nullptr;
 	ConstBufferDataTransform* constMapTransform1 = nullptr;
@@ -685,18 +705,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		cbResourceDesc.SampleDesc.Count = 1;
 		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		//定数バッファの生成
-		result = device->CreateCommittedResource(
-			&cbHeapProp,//ヒープ設定
-			D3D12_HEAP_FLAG_NONE,
-			&cbResourceDesc,//リソース設定
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&constBuffTransform1));
+		////定数バッファの生成
+		//result = device->CreateCommittedResource(
+		//	&cbHeapProp,//ヒープ設定
+		//	D3D12_HEAP_FLAG_NONE,
+		//	&cbResourceDesc,//リソース設定
+		//	D3D12_RESOURCE_STATE_GENERIC_READ,
+		//	nullptr,
+		//	IID_PPV_ARGS(&constBuffTransform1));
 
-		//定数バッファのマッピング
-		result = constBuffTransform1->Map(0, nullptr, (void**)&constMapTransform1);//マッピング
-		assert(SUCCEEDED(result));
+		////定数バッファのマッピング
+		//result = constBuffTransform1->Map(0, nullptr, (void**)&constMapTransform1);//マッピング
+		//assert(SUCCEEDED(result));
 	}
 	////並行投影行列の計算
 	//constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
@@ -716,11 +736,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMFLOAT3 up(0, 1, 0);	 //上方向ベクトル
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
-	//行列の計算
-	constMapTransform0->mat = matView * matProjection;
+	////行列の計算
+	//constMapTransform0->mat = matView * matProjection;
 
-	//行列の計算
-	constMapTransform1->mat = matView * matProjection;
+	////行列の計算
+	//constMapTransform1->mat = matView * matProjection;
 
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
@@ -853,45 +873,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	float angle = 0.0f;//カメラの回転角
 
-	XMFLOAT3 position = { 0.0f,-30.0f,0.0f };
+	//XMFLOAT3 position = { 0.0f,-30.0f,0.0f };
 
-	XMFLOAT3 scale = { 1.0f,1.0f,1.0f };
+	//XMFLOAT3 scale = { 1.0f,1.0f,1.0f };
 
-	XMFLOAT3 rotation = { 0.0f,0.0f,0.0f };
+	//XMFLOAT3 rotation = { 0.0f,0.0f,0.0f };
 
-	XMFLOAT3 position1 = { -20.0f,0,0 };
+	//XMFLOAT3 position1 = { -20.0f,0,0 };
 
-	XMFLOAT3 scale1 = { 1.0f,1.0f,1.0f };
+	//XMFLOAT3 scale1 = { 1.0f,1.0f,1.0f };
 
-	XMFLOAT3 rotation1 = { 0.0f,45.0f,0.0f };
+	//XMFLOAT3 rotation1 = { 0.0f,45.0f,0.0f };
 
-	//ワールド変換行列
-	XMMATRIX matWorld = XMMatrixIdentity();
+	////ワールド変換行列
+	//XMMATRIX matWorld = XMMatrixIdentity();
 
-	XMMATRIX matScale = XMMatrixIdentity();
-	matScale *= XMMatrixScaling(scale.x, scale.y, scale.z);
+	//XMMATRIX matScale = XMMatrixIdentity();
+	//matScale *= XMMatrixScaling(scale.x, scale.y, scale.z);
 
-	XMMATRIX matRot = XMMatrixIdentity();//回転行列
-	matRot *= XMMatrixRotationZ(XMConvertToRadians(XM_PI / 180 * rotation.z));//Z軸回りに0度回転
-	matRot *= XMMatrixRotationX(XMConvertToRadians(XM_PI / 180 * rotation.x));//X軸回りに15度回転
-	matRot *= XMMatrixRotationY(XMConvertToRadians(XM_PI / 180 * rotation.y));//Y軸回りに度回転
+	//XMMATRIX matRot = XMMatrixIdentity();//回転行列
+	//matRot *= XMMatrixRotationZ(XMConvertToRadians(XM_PI / 180 * rotation.z));//Z軸回りに0度回転
+	//matRot *= XMMatrixRotationX(XMConvertToRadians(XM_PI / 180 * rotation.x));//X軸回りに15度回転
+	//matRot *= XMMatrixRotationY(XMConvertToRadians(XM_PI / 180 * rotation.y));//Y軸回りに度回転
 
-	XMMATRIX matTrans = XMMatrixIdentity();//平行移動行列
-	matTrans *= XMMatrixTranslation(position.x, position.y, position.z);//(-50,0,0)平行移動
+	//XMMATRIX matTrans = XMMatrixIdentity();//平行移動行列
+	//matTrans *= XMMatrixTranslation(position.x, position.y, position.z);//(-50,0,0)平行移動
 
-	//ワールド変換行列
-	XMMATRIX matWorld1=XMMatrixIdentity();
+	////ワールド変換行列
+	//XMMATRIX matWorld1=XMMatrixIdentity();
 
-	XMMATRIX matScale1=XMMatrixScaling(scale1.x, scale1.y, scale1.z);//スケーリング行列
+	//XMMATRIX matScale1=XMMatrixScaling(scale1.x, scale1.y, scale1.z);//スケーリング行列
 
-	XMMATRIX matRot1=XMMatrixRotationY(XM_PI / 180 * rotation1.y);//回転行列
+	//XMMATRIX matRot1=XMMatrixRotationY(XM_PI / 180 * rotation1.y);//回転行列
 
-	XMMATRIX matTrans1=XMMatrixTranslation(position1.x, position1.y, position1.z);//平行移動行列
+	//XMMATRIX matTrans1=XMMatrixTranslation(position1.x, position1.y, position1.z);//平行移動行列
 
-	//ワールド行列を合成
-	matWorld1 = matScale1 * matRot1 * matTrans1;
-	//ワールド、ビュー、射影行列を合成してシェーダーに転送
-	constMapTransform1->mat = matWorld1 * matView * matProjection;;
+	////ワールド行列を合成
+	//matWorld1 = matScale1 * matRot1 * matTrans1;
+	////ワールド、ビュー、射影行列を合成してシェーダーに転送
+	//constMapTransform1->mat = matWorld1 * matView * matProjection;;
 
 	//ゲームループ
 	while (true) {
@@ -947,42 +967,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
 
-		//いずれかのキーを押していたら
-		if (key[DIK_UP]) { position.z += 1.0f; }
-		else if (key[DIK_DOWN]) { position.z -= 1.0f; }
-		if (key[DIK_RIGHT]) { position.x += 1.0f; }
-		else if (key[DIK_LEFT]) { position.x -= 1.0f; }
+		////いずれかのキーを押していたら
+		//if (key[DIK_UP]) { position.z += 1.0f; }
+		//else if (key[DIK_DOWN]) { position.z -= 1.0f; }
+		//if (key[DIK_RIGHT]) { position.x += 1.0f; }
+		//else if (key[DIK_LEFT]) { position.x -= 1.0f; }
 
-		//いずれかのキーを押していたら
-		if (key[DIK_W]) { position1.z += 1.0f; }
-		else if (key[DIK_S]) { position1.z -= 1.0f; }
-		if (key[DIK_D]) { position1.x += 1.0f; }
-		else if (key[DIK_A]) { position1.x -= 1.0f; }
+		////いずれかのキーを押していたら
+		//if (key[DIK_W]) { position1.z += 1.0f; }
+		//else if (key[DIK_S]) { position1.z -= 1.0f; }
+		//if (key[DIK_D]) { position1.x += 1.0f; }
+		//else if (key[DIK_A]) { position1.x -= 1.0f; }
 
-		//ワールド変換行列
-		matWorld = XMMatrixIdentity();
+		////ワールド変換行列
+		//matWorld = XMMatrixIdentity();
 
-		matTrans = XMMatrixIdentity();//平行移動行列
-		matTrans *= XMMatrixTranslation(position.x, position.y, position.z);//(-50,0,0)平行移動
+		//matTrans = XMMatrixIdentity();//平行移動行列
+		//matTrans *= XMMatrixTranslation(position.x, position.y, position.z);//(-50,0,0)平行移動
 
-		matWorld *= matScale;//ワールド座標にスケーリングを反映
-		matWorld *= matRot;//ワールド行列に回転を反映
-		matWorld *= matTrans;//ワールド行列に平行移動を反映
+		//matWorld *= matScale;//ワールド座標にスケーリングを反映
+		//matWorld *= matRot;//ワールド行列に回転を反映
+		//matWorld *= matTrans;//ワールド行列に平行移動を反映
 
-		//ワールド変換行列
-		matWorld1 = XMMatrixIdentity();
+		////ワールド変換行列
+		//matWorld1 = XMMatrixIdentity();
 
-		matTrans1 = XMMatrixIdentity();//平行移動行列
-		matTrans1 *= XMMatrixTranslation(position1.x, position1.y, position1.z);//(-50,0,0)平行移動
+		//matTrans1 = XMMatrixIdentity();//平行移動行列
+		//matTrans1 *= XMMatrixTranslation(position1.x, position1.y, position1.z);//(-50,0,0)平行移動
 
-		matWorld1 *= matScale1;//ワールド座標にスケーリングを反映
-		matWorld1 *= matRot1;//ワールド行列に回転を反映
-		matWorld1 *= matTrans1;//ワールド行列に平行移動を反映
+		//matWorld1 *= matScale1;//ワールド座標にスケーリングを反映
+		//matWorld1 *= matRot1;//ワールド行列に回転を反映
+		//matWorld1 *= matTrans1;//ワールド行列に平行移動を反映
 
-		//行列の計算
-		constMapTransform0->mat = matWorld * matView * matProjection;
-		//行列の計算
-		constMapTransform1->mat = matWorld1 * matView * matProjection;;
+		////行列の計算
+		//constMapTransform0->mat = matWorld * matView * matProjection;
+		////行列の計算
+		//constMapTransform1->mat = matWorld1 * matView * matProjection;;
+		for (size_t i = 0; i < _countof(object3ds); i++)
+		{
+			object3ds[i].Update(matView, matProjection);
+		}
 		//更新処理ここまで
 
 		//描画コマンドここから
@@ -1024,15 +1048,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 		//インデックスバッファビューの設定コマンド
 		commandList->IASetIndexBuffer(&ibView);
-		//定数バッファビュー(CBV)の設定コマンド
-		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform0->GetGPUVirtualAddress());
-		//描画コマンド
-		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
+		////定数バッファビュー(CBV)の設定コマンド
+		//commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform0->GetGPUVirtualAddress());
+		////描画コマンド
+		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
-		//定数バッファビュー(CBV)の設定コマンド
-		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform1->GetGPUVirtualAddress());
-		//描画コマンド
-		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
+		////定数バッファビュー(CBV)の設定コマンド
+		//commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform1->GetGPUVirtualAddress());
+		////描画コマンド
+		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
 		//描画コマンドここまで
 

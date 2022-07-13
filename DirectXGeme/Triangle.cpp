@@ -294,21 +294,8 @@ Triangle::~Triangle()
 }
 void Triangle::Draw(ID3D12GraphicsCommandList* commandList)
 {
-	//パイプラインステートとルートシグネチャの設定コマンド
-	commandList->SetPipelineState(pipelineState);
-	commandList->SetGraphicsRootSignature(rootSignature);
-	//プリミティブ形状の設定コマンド
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//頂点バッファビューの設定コマンド
 	commandList->IASetVertexBuffers(0, 1, &vbView);
-	////定数バッファビュー（CBV）の設定コマンド
-	//commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
-	//////SRVヒープの設定コマンド
-	//commandList->SetDescriptorHeaps(1, &srvHeap);
-	////SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
-	//D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
-	////SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
-	//commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 	//インデックスバッファビューの設定コマンド
 	commandList->IASetIndexBuffer(&ibView);
 	//描画コマンド
