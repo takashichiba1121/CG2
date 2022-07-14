@@ -1,8 +1,10 @@
 #pragma once
 #include<d3d12.h>
 #include<DirectXMath.h>
+#include<wrl.h>
 using namespace DirectX;
 using namespace std;
+using namespace Microsoft::WRL;
 
 
 class Triangle
@@ -13,8 +15,8 @@ public:
 		XMFLOAT3 pos; //xyzç¿ïW
 		XMFLOAT2 uv;  //uvç¿ïW
 	};
-	ID3D12PipelineState* pipelineState=nullptr;
-	ID3D12RootSignature* rootSignature=nullptr;
+	ComPtr<ID3D12PipelineState> pipelineState=nullptr;
+	ComPtr<ID3D12RootSignature> rootSignature=nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 	D3D12_INDEX_BUFFER_VIEW ibView;
 	HRESULT result;

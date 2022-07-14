@@ -286,7 +286,7 @@ Triangle::~Triangle()
 	 assert(SUCCEEDED(result));
 	 rootSigBlob->Release();
 	 //パイプラインにルートシグネチャをセット
-	 pipelineDesc.pRootSignature = rootSignature;
+	 pipelineDesc.pRootSignature = rootSignature.Get();
 
 	 //パイプランスステートの生成
 	 result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
