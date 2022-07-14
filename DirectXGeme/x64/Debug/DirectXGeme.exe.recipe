@@ -2,15 +2,15 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\K021G1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe</FullPath>
+      <FullPath>C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles>
     <ContentFile>
-      <FullPath>C:\K021G1120\二年次\CG2\DirectXGeme\x64\Debug\BasicPS.cso</FullPath>
+      <FullPath>C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\BasicPS.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\K021G1120\二年次\CG2\DirectXGeme\x64\Debug\BasicVS.cso</FullPath>
+      <FullPath>C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\BasicVS.cso</FullPath>
     </ContentFile>
   </ContentFiles>
   <SatelliteDlls />

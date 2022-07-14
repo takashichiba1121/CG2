@@ -17,6 +17,8 @@ public:
 
 	void Update(XMMATRIX matView, XMMATRIX matProjection);
 
+	void Draw(ID3D12GraphicsCommandList* commandList, D3D12_VERTEX_BUFFER_VIEW vbView, D3D12_INDEX_BUFFER_VIEW ibView, UINT numIndices);
+
 	//定数バッファ（行列用）
 	ID3D12Resource* constBuffTransform;
 	//定数バッファマップ（行列用）

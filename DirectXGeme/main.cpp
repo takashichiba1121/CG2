@@ -665,7 +665,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//先頭以外なら
 			if (i > 0) {
 				//一つ前のオブジェクトを親オブジェクトとする
-				//object3ds[i].parent = &object3ds[i - 1];
+				object3ds[i].parent = &object3ds[i - 1];
 				//親オブジェクトの9割の大きさ
 				object3ds[i].scale = { 0.9f,0.9f,0.9f};
 				//親オブジェクトに対してZ軸まわりに30度回転
@@ -967,17 +967,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
 
-		////いずれかのキーを押していたら
-		//if (key[DIK_UP]) { position.z += 1.0f; }
-		//else if (key[DIK_DOWN]) { position.z -= 1.0f; }
-		//if (key[DIK_RIGHT]) { position.x += 1.0f; }
-		//else if (key[DIK_LEFT]) { position.x -= 1.0f; }
+		//いずれかのキーを押していたら
+		if (key[DIK_UP]) { object3ds[0].position.y += 1.0f; }
+		else if (key[DIK_DOWN]) { object3ds[0].position.y -= 1.0f; }
+		if (key[DIK_RIGHT]) { object3ds[0].position.x += 1.0f; }
+		else if (key[DIK_LEFT]) { object3ds[0].position.x -= 1.0f; }
 
-		////いずれかのキーを押していたら
-		//if (key[DIK_W]) { position1.z += 1.0f; }
-		//else if (key[DIK_S]) { position1.z -= 1.0f; }
-		//if (key[DIK_D]) { position1.x += 1.0f; }
-		//else if (key[DIK_A]) { position1.x -= 1.0f; }
+		if (key[DIK_Q]) { object3ds[0].rotation.z += 0.1f; }
+		else if (key[DIK_E]) { object3ds[0].rotation.z -= 0.1f;}
+
 
 		////ワールド変換行列
 		//matWorld = XMMatrixIdentity();
@@ -1040,14 +1038,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 		//定数バッファビュー（CBV）の設定コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
-		////SRVヒープの設定コマンド
+		//SRVヒープの設定コマンド
 		commandList->SetDescriptorHeaps(1, &srvHeap);
 		//SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
 		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
 		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
 		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
-		//インデックスバッファビューの設定コマンド
-		commandList->IASetIndexBuffer(&ibView);
+		////インデックスバッファビューの設定コマンド
+		//commandList->IASetIndexBuffer(&ibView);
 		////定数バッファビュー(CBV)の設定コマンド
 		//commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform0->GetGPUVirtualAddress());
 		////描画コマンド
@@ -1057,6 +1055,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform1->GetGPUVirtualAddress());
 		////描画コマンド
 		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
+
+		//全オブジェクトについての処理
+		for (int i = 0; i < _countof(object3ds); i++)
+		{
+			object3ds[i].Draw(commandList, vbView, ibView, _countof(indices));
+		}
 
 		//描画コマンドここまで
 
