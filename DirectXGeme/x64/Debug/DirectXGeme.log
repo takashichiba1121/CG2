@@ -1,2 +1,5 @@
 ﻿  main.cpp
+  object3d.cpp
+  コードを生成中...
+  LINK : 前回のインクリメンタル リンクで C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe が見つからなかったか、ビルドされませんでした。フル リンクを行います。
   DirectXGeme.vcxproj -> C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe
