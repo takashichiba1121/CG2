@@ -852,7 +852,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	srvHeapDesc.NumDescriptors = kMaxSRVCount;
 
 	//設定を元にSRV用デスクリプタヒープを生成
-	ID3D12DescriptorHeap* srvHeap = nullptr;
+	ComPtr <ID3D12DescriptorHeap> srvHeap = nullptr;
 	result = device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
 	assert(SUCCEEDED(result));
 	//SRVヒープの先頭ハンドルを取得
@@ -1096,7 +1096,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//定数バッファビュー（CBV）の設定コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 		//SRVヒープの設定コマンド
-		commandList->SetDescriptorHeaps(1, &srvHeap);
+		commandList->SetDescriptorHeaps(1, srvHeap.GetAddressOf());
 		//SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
 		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
 		//2枚目を指し示すようにしたSRVのハンドルをルトパラメーター1番に設定
