@@ -208,14 +208,14 @@ Triangle::~Triangle()
 	 //レンダーターゲットのブレンド設定
 	 D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	 blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
-	 blenddesc.BlendEnable = false;//ブレンドを有効にする
-	 blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;//加算
-	 blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;//ソースの値を100%使う
-	 blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//デストの値を0%使う
-	 //加算合成
-	 blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	 blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
-	 blenddesc.DestBlend = D3D12_BLEND_ONE;//デストの値を100%使う
+	 blenddesc.BlendEnable = true;//ブレンドを有効にする
+	 //blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;//加算
+	 //blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;//ソースの値を100%使う
+	 //blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//デストの値を0%使う
+	 ////加算合成
+	 //blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	 //blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
+	 //blenddesc.DestBlend = D3D12_BLEND_ONE;//デストの値を100%使う
 	 ////減算合成
 	 //blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;//デストからソースを減算
 	 //blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
@@ -224,10 +224,10 @@ Triangle::~Triangle()
 	 //blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
 	 //blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;//1.0f-デストカラーの値
 	 //blenddesc.DestBlend = D3D12_BLEND_ZERO;//使わない
-	 ////半透明合成
-	 //blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	 //blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
-	 //blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;//1.0f-ソースのアルファ値
+	 //半透明合成
+	 blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	 blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
+	 blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;//1.0f-ソースのアルファ値
 	 //頂点レイアウトの設定
 	 pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
 	 pipelineDesc.InputLayout.NumElements = _countof(inputLayout);
@@ -267,8 +267,6 @@ Triangle::~Triangle()
 	 samplerDesc.MinLOD = 0.0f;//ミップマップ最小値
 	 samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	 samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダーからのみ使用可能
-	 //ルートシグネチャ
-	 rootSignature;
 	 //ルートシグネチャの設定
 	 D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
 	 rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -289,8 +287,45 @@ Triangle::~Triangle()
 	 pipelineDesc.pRootSignature = rootSignature.Get();
 
 	 //パイプランスステートの生成
-	 result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
+	 result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(pipelineState.GetAddressOf()));
 	 assert(SUCCEEDED(result));
+
+	 //ヒープ設定
+	 D3D12_HEAP_PROPERTIES cbHeapProp{};
+	 cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;//GPUへの転送用
+	 //リソース設定
+	 D3D12_RESOURCE_DESC cbResourceDesc{};
+	 cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	 cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;//256バイトアラインメント
+	 cbResourceDesc.Height = 1;
+	 cbResourceDesc.DepthOrArraySize = 1;
+	 cbResourceDesc.MipLevels = 1;
+	 cbResourceDesc.SampleDesc.Count = 1;
+	 cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	 ComPtr<ID3D12Resource> constBuffMaterial = nullptr;
+	 //定数バッファの生成
+	 result = device->CreateCommittedResource(
+		 &cbHeapProp,//ヒープ設定
+		 D3D12_HEAP_FLAG_NONE,
+		 &cbResourceDesc,//リソース設定
+		 D3D12_RESOURCE_STATE_GENERIC_READ,
+		 nullptr,
+		 IID_PPV_ARGS(&constBuffMaterial));
+	 assert(SUCCEEDED(result));
+	 //定数バッファのマッピング
+	 result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
+	 //値を書き込むと自動的に転送される
+	 constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
+	 assert(SUCCEEDED(result));
+}
+void Triangle::Update()
+{
+	constMapMaterial->color.z -= 0.01;
+
+	if (constMapMaterial->color.z <= 0)
+	{
+		constMapMaterial->color.z = 1.0f;
+	}
 }
 void Triangle::Draw(ID3D12GraphicsCommandList* commandList)
 {

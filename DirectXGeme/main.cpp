@@ -22,12 +22,6 @@
 using namespace DirectX;
 using namespace std;
 
-
-//定数バッファ用データ構造体（マテリアル）
-struct ConstBufferDataMaterial {
-	XMFLOAT4 color;//色（RGBA）
-};
-
 //ウィンドウプロージャー
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wapram, LPARAM lparam) {
 	//メッセージに応じてゲーム固有の処理を行う
@@ -288,6 +282,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMFLOAT3 normal; //法線ベクトル
 		XMFLOAT2 uv;     //uv座標
 	};
+
 	//頂点データ
 	Vertex vertices[] = {
 		//x      y	   z	 u    v
@@ -852,7 +847,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	srvHeapDesc.NumDescriptors = kMaxSRVCount;
 
 	//設定を元にSRV用デスクリプタヒープを生成
-	ID3D12DescriptorHeap* srvHeap = nullptr;
+	ComPtr <ID3D12DescriptorHeap> srvHeap = nullptr;
 	result = device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
 	assert(SUCCEEDED(result));
 	//SRVヒープの先頭ハンドルを取得
@@ -1012,6 +1007,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 		//更新処理ここから
+
+		/*constMapMaterial->color.x -= 0.01;
+		if (constMapMaterial->color.x <= 0)
+		{
+			constMapMaterial->color.x
+		}*/
+
 		if (key[DIK_Z] || key[DIK_X])
 		{
 			if (key[DIK_Z]) { angle += XMConvertToRadians(1.0f); }
@@ -1096,7 +1098,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//定数バッファビュー（CBV）の設定コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 		//SRVヒープの設定コマンド
-		commandList->SetDescriptorHeaps(1, &srvHeap);
+		commandList->SetDescriptorHeaps(1, srvHeap.GetAddressOf());
 		//SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
 		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
 		//2枚目を指し示すようにしたSRVのハンドルをルトパラメーター1番に設定
@@ -1120,7 +1122,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			object3ds[i].Draw(commandList.Get(), vbView, ibView, _countof(indices));
 		}
-
 		//描画コマンドここまで
 
 		// 5.リソースバリアを戻す
@@ -1132,7 +1133,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		result = commandList->Close();
 		assert(SUCCEEDED(result));
 		//コマンドリストの実行
-		ID3D12CommandList* commandLists[] = { commandList.Get()};
+		ID3D12CommandList* commandLists[] = { commandList.Get() };
 		commandQueue->ExecuteCommandLists(1, commandLists);
 
 		//画面に表示するバッファをフリップ（裏表の入れ替え）

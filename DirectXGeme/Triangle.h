@@ -6,6 +6,10 @@ using namespace DirectX;
 using namespace std;
 using namespace Microsoft::WRL;
 
+//定数バッファ用データ構造体（マテリアル）
+struct ConstBufferDataMaterial {
+	XMFLOAT4 color;//色（RGBA）
+};
 
 class Triangle
 {
@@ -19,6 +23,7 @@ public:
 	ComPtr<ID3D12RootSignature> rootSignature=nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 	D3D12_INDEX_BUFFER_VIEW ibView;
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
 	HRESULT result;
 	Vertex vertex1;
 	Vertex vertex2;
@@ -36,5 +41,6 @@ public:
 	~Triangle();
 	//描画初期化処理
 	void Initialize(ID3D12Device* device);
+	void Update();
 	void Draw(ID3D12GraphicsCommandList* commandList);
 };
