@@ -282,6 +282,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMFLOAT3 normal; //法線ベクトル
 		XMFLOAT2 uv;     //uv座標
 	};
+	Triangle* triangle = new Triangle
+	{
+		//前
+		{{-5.0f,-5.0f,-0.0f},{0.0f,1.0f} },//左下
+		{{-5.0f, 5.0f,-0.0f},{0.0f,0.0f} },//左上
+		{{ 5.0f,-5.0f,-0.0f},{1.0f,1.0f} },//右下
+	};
+
+	triangle->Initialize(device.Get());
 
 	//頂点データ
 	Vertex vertices[] = {
@@ -534,14 +543,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//レンダーターゲットのブレンド設定
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
-	blenddesc.BlendEnable = false;//ブレンドを有効にする
+	blenddesc.BlendEnable = true;//ブレンドを有効にする
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;//加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;//ソースの値を100%使う
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//デストの値を0%使う
 	//加算合成
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
-	blenddesc.DestBlend = D3D12_BLEND_ONE;//デストの値を100%使う
+	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	//blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
+	//blenddesc.DestBlend = D3D12_BLEND_ONE;//デストの値を100%使う
 	////減算合成
 	//blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;//デストからソースを減算
 	//blenddesc.SrcBlend = D3D12_BLEND_ONE;//ソースの値を100%使う
@@ -550,10 +559,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
 	//blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;//1.0f-デストカラーの値
 	//blenddesc.DestBlend = D3D12_BLEND_ZERO;//使わない
-	////半透明合成
-	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	//blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
-	//blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;//1.0f-ソースのアルファ値
+	//半透明合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
+	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;//1.0f-ソースのアルファ値
 	//頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
 	pipelineDesc.InputLayout.NumElements = _countof(inputLayout);
@@ -761,7 +770,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ConstBufferDataMaterial* constMapMaterial = nullptr;
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
 	//値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);//RGBAで半透明の赤
 	assert(SUCCEEDED(result));
 
 	//横方向ピクセル数
@@ -1008,11 +1017,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//更新処理ここから
 
-		/*constMapMaterial->color.x -= 0.01;
-		if (constMapMaterial->color.x <= 0)
+		constMapMaterial->color.z -= 0.01;
+		if (constMapMaterial->color.z <= 0)
 		{
-			constMapMaterial->color.x
-		}*/
+			constMapMaterial->color.z = 1;
+		}
 
 		if (key[DIK_Z] || key[DIK_X])
 		{
@@ -1101,8 +1110,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetDescriptorHeaps(1, srvHeap.GetAddressOf());
 		//SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
 		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
-		//2枚目を指し示すようにしたSRVのハンドルをルトパラメーター1番に設定
-		srvGpuHandle.ptr += incrementSize;
+		////2枚目を指し示すようにしたSRVのハンドルをルトパラメーター1番に設定
+		//srvGpuHandle.ptr += incrementSize;
 		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
 		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 		////インデックスバッファビューの設定コマンド
@@ -1117,9 +1126,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		////描画コマンド
 		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
+		triangle->Draw(commandList.Get());
+
 		//全オブジェクトについての処理
 		for (int i = 0; i < _countof(object3ds); i++)
 		{
+			if (i==0)
+			{
+				//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+				commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+			}
+			if (i == 1)
+			{
+				srvGpuHandle.ptr += incrementSize;
+				//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+				commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+			}
 			object3ds[i].Draw(commandList.Get(), vbView, ibView, _countof(indices));
 		}
 		//描画コマンドここまで
@@ -1157,6 +1179,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//DirectX毎フレーム処理　ここまで
 
 	}
+	delete(triangle);
 	//ウインドウクラスを登録解除
 	UnregisterClass(w.lpszClassName, w.hInstance);
 

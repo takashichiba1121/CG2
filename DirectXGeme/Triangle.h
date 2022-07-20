@@ -19,11 +19,9 @@ public:
 		XMFLOAT3 pos; //xyzÀ•W
 		XMFLOAT2 uv;  //uvÀ•W
 	};
-	ComPtr<ID3D12PipelineState> pipelineState=nullptr;
 	ComPtr<ID3D12RootSignature> rootSignature=nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 	D3D12_INDEX_BUFFER_VIEW ibView;
-	ConstBufferDataMaterial* constMapMaterial = nullptr;
 	HRESULT result;
 	Vertex vertex1;
 	Vertex vertex2;
@@ -41,6 +39,5 @@ public:
 	~Triangle();
 	//•`‰æ‰Šú‰»ˆ—
 	void Initialize(ID3D12Device* device);
-	void Update();
 	void Draw(ID3D12GraphicsCommandList* commandList);
 };

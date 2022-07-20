@@ -8,7 +8,7 @@ float4 Graph(VSOutput input) :SV_TARGET
 	float diffuse = saturate(dot(-light, input.normal));	//diffuseを[0,1]の範囲にClampする
 	float brightness = diffuse + 0.3f;						//アンビエント項を0.3として計算
 	float4 texcolor = float4(tex.Sample(smp, input.uv));	
-	return float4(texcolor.rgb*brightness, texcolor.a)*color;
+	return float4(texcolor.rgb*brightness, texcolor.a)*float4(input.uv.x,input.uv.y,color.z,0.5f);
 }
 //float4 main() : SV_TARGET
 //{
