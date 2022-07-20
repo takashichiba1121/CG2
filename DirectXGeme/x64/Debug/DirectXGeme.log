@@ -1,2 +1,3 @@
-﻿  Triangle.cpp
+﻿  Line.cpp
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.22000.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
   DirectXGeme.vcxproj -> C:\k021g1120\二年次\CG2\DirectXGeme\x64\Debug\DirectXGeme.exe

@@ -18,6 +18,7 @@
 #pragma comment(lib,"dxguid.lib")
 #include"Triangle.h"
 #include"object3d.h"
+#include"Line.h"
 
 using namespace DirectX;
 using namespace std;
@@ -282,21 +283,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMFLOAT3 normal; //法線ベクトル
 		XMFLOAT2 uv;     //uv座標
 	};
-	Triangle* triangle = new Triangle
-	{
-		//前
-		{{-5.0f,-5.0f,-0.0f},{0.0f,1.0f} },//左下
-		{{-5.0f, 5.0f,-0.0f},{0.0f,0.0f} },//左上
-		{{ 5.0f,-5.0f,-0.0f},{1.0f,1.0f} },//右下
-	};
-
-	triangle->Initialize(device.Get());
-
+	Line *line = new Line;
+	line->Initialize(device.Get(), result);
 	//頂点データ
 	Vertex vertices[] = {
 		//x      y	   z	 u    v
 		//前
-		{{-5.0f,-5.0f,-5.0f},{}, {0.0f,1.0f} },//左下
+		{{-5.0f,-5.0f,-5.0f},{},{0.0f,1.0f} },//左下
 		{{-5.0f, 5.0f,-5.0f},{},{0.0f,0.0f} },//左上
 		{{ 5.0f,-5.0f,-5.0f},{},{1.0f,1.0f} },//右下
 		{{ 5.0f, 5.0f,-5.0f},{},{1.0f,0.0f} },//右上
@@ -1018,9 +1011,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//更新処理ここから
 
 		constMapMaterial->color.z -= 0.01;
-		if (constMapMaterial->color.z <= 0)
+		if (constMapMaterial->color.z <= -1)
 		{
-			constMapMaterial->color.z = 1;
+			constMapMaterial->color.z = 2;
 		}
 
 		if (key[DIK_Z] || key[DIK_X])
@@ -1110,8 +1103,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetDescriptorHeaps(1, srvHeap.GetAddressOf());
 		//SRVヒープの先頭ハンドルを取得（SRVを指しているはず）
 		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
-		////2枚目を指し示すようにしたSRVのハンドルをルトパラメーター1番に設定
-		//srvGpuHandle.ptr += incrementSize;
+		//2枚目を指し示すようにしたSRVのハンドルをルトパラメーター1番に設定
+		srvGpuHandle.ptr += incrementSize;
 		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
 		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 		////インデックスバッファビューの設定コマンド
@@ -1126,24 +1119,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		////描画コマンド
 		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
-		triangle->Draw(commandList.Get());
+		////全オブジェクトについての処理
+		//for (int i = 0; i < _countof(object3ds); i++)
+		//{
+		//	if (i==0)
+		//	{
+		//		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+		//		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+		//	}
+		//	if (i == 1)
+		//	{
+		//		srvGpuHandle.ptr -= incrementSize;
+		//		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+		//		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+		//	}
+		//	object3ds[i].Draw(commandList.Get(), vbView, ibView, _countof(indices));
+		//}
 
-		//全オブジェクトについての処理
-		for (int i = 0; i < _countof(object3ds); i++)
-		{
-			if (i==0)
-			{
-				//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
-				commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
-			}
-			if (i == 1)
-			{
-				srvGpuHandle.ptr += incrementSize;
-				//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
-				commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
-			}
-			object3ds[i].Draw(commandList.Get(), vbView, ibView, _countof(indices));
-		}
+		line->Draw(commandList.Get());
 		//描画コマンドここまで
 
 		// 5.リソースバリアを戻す
@@ -1179,7 +1172,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//DirectX毎フレーム処理　ここまで
 
 	}
-	delete(triangle);
 	//ウインドウクラスを登録解除
 	UnregisterClass(w.lpszClassName, w.hInstance);
 
