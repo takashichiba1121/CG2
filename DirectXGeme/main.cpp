@@ -763,7 +763,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ConstBufferDataMaterial* constMapMaterial = nullptr;
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
 	//値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);//RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
 	assert(SUCCEEDED(result));
 
 	//横方向ピクセル数
@@ -1119,24 +1119,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		////描画コマンド
 		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 
-		////全オブジェクトについての処理
-		//for (int i = 0; i < _countof(object3ds); i++)
-		//{
-		//	if (i==0)
-		//	{
-		//		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
-		//		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
-		//	}
-		//	if (i == 1)
-		//	{
-		//		srvGpuHandle.ptr -= incrementSize;
-		//		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
-		//		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
-		//	}
-		//	object3ds[i].Draw(commandList.Get(), vbView, ibView, _countof(indices));
-		//}
+		//全オブジェクトについての処理
+		for (int i = 0; i < _countof(object3ds); i++)
+		{
+			if (i==0)
+			{
+				//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+				commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+			}
+			if (i == 1)
+			{
+				srvGpuHandle.ptr -= incrementSize;
+				//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+				commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+			}
+			object3ds[i].Draw(commandList.Get(), vbView, ibView, _countof(indices));
+		}
 
-		line->Draw(commandList.Get());
+		line->Draw(commandList.Get(),matView, matProjection);
 		//描画コマンドここまで
 
 		// 5.リソースバリアを戻す
@@ -1174,6 +1174,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 	//ウインドウクラスを登録解除
 	UnregisterClass(w.lpszClassName, w.hInstance);
-
+	delete line;
 	return 0;
 }

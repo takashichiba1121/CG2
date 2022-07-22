@@ -2,19 +2,12 @@
 
 void Line::Initialize(ID3D12Device* device, HRESULT result)
 {
-	//頂点データ
 	Vertex vertices[] = {
 		//x      y	   z	 u    v
 		//前
-		{{-5.0f,-5.0f,-5.0f}},//左下
-		{{-5.0f, 5.0f,-5.0f}},//左上
-		{{ 5.0f,-5.0f,-5.0f}},//右下
-		{{ 5.0f, 5.0f,-5.0f}},//右上
-		//後
-		{{-5.0f,-5.0f, 5.0f}},//左下
-		{{-5.0f, 5.0f, 5.0f}},//左上
-		{{ 5.0f,-5.0f, 5.0f}},//右下
-		{{ 5.0f, 5.0f, 5.0f}},//右上
+		{{-5.0f,-5.0f,-5.0f} },//左下
+		{{-5.0f, 5.0f,-5.0f} },//左上
+		
 	};
 	//インデックスデータ
 	unsigned short indices[] =
@@ -108,7 +101,7 @@ void Line::Initialize(ID3D12Device* device, HRESULT result)
 		L"BasicVS.hlsl", //シェーダーファイル名
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,//インクルード可能にする
-		"main", "vs_5_0",//エントリーポイント名、シェーダーモデル指定
+		"LINE", "vs_5_0",//エントリーポイント名、シェーダーモデル指定
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, //デバッグ用設定
 		0,
 		&vsBlob, &errorBlob);
@@ -157,16 +150,6 @@ void Line::Initialize(ID3D12Device* device, HRESULT result)
 		D3D12_APPEND_ALIGNED_ELEMENT,
 		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
 		},//vyz座標(一行で書いたほうが見やすい)
-		{
-			"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
-		},//法線ベクトル(一行で書いたほうが見やすい)
-		{
-		"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,
-		D3D12_APPEND_ALIGNED_ELEMENT,
-		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0,
-		},//uv(一行で書いたほうが見やすい)
 	};
 
 	//設定
@@ -271,27 +254,100 @@ void Line::Initialize(ID3D12Device* device, HRESULT result)
 	//パイプラインにルートシグネチャをセット
 	pipelineDesc.pRootSignature = rootSignature.Get();
 
-	//デプスステンシルステートの設定
-	pipelineDesc.DepthStencilState.DepthEnable = true;//深度テストを行う
-	pipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;//書き込み許可
-	pipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;//小さければ合格
-	pipelineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;//深度値フォーマット
+	////デプスステンシルステートの設定
+	//pipelineDesc.DepthStencilState.DepthEnable = true;//深度テストを行う
+	//pipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;//書き込み許可
+	//pipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;//小さければ合格
+	//pipelineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;//深度値フォーマット
 
 	result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
+
+	ComPtr<ID3D12Resource> constBuffTransform0 = nullptr;
+	ConstBufferDataTransform* constMapTransform0 = nullptr;
+	////ヒープ設定
+	//D3D12_HEAP_PROPERTIES cbHeapProp{};
+	//cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
+	////リソース設定
+	//D3D12_RESOURCE_DESC cbResourceDesc{};
+	//cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	//cbResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;//256バイトアラインメント
+	//cbResourceDesc.Height = 1;
+	//cbResourceDesc.DepthOrArraySize = 1;
+	//cbResourceDesc.MipLevels = 1;
+	//cbResourceDesc.SampleDesc.Count = 1;
+	//cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	//ヒープ設定
+	D3D12_HEAP_PROPERTIES cbHeapProp{};
+	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;//GPUへの転送用
+	//リソース設定
+	D3D12_RESOURCE_DESC cbResourceDesc{};
+	cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;//256バイトアラインメント
+	cbResourceDesc.Height = 1;
+	cbResourceDesc.DepthOrArraySize = 1;
+	cbResourceDesc.MipLevels = 1;
+	cbResourceDesc.SampleDesc.Count = 1;
+	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//定数バッファの生成
+	result = device->CreateCommittedResource(
+		&cbHeapProp,//ヒープ設定
+		D3D12_HEAP_FLAG_NONE,
+		&cbResourceDesc,//リソース設定
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffMaterial));
+	assert(SUCCEEDED(result));
+	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
+	//値を書き込むと自動的に転送される
+	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);//RGBAで半透明の赤
+	assert(SUCCEEDED(result));
+
+	//ヒープ設定
+	D3D12_HEAP_PROPERTIES HeapProp{};
+	HeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//リソース設定
+	D3D12_RESOURCE_DESC ResourceDesc{};
+	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	ResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;//256バイトアラインメント
+	ResourceDesc.Height = 1;
+	ResourceDesc.DepthOrArraySize = 1;
+	ResourceDesc.MipLevels = 1;
+	ResourceDesc.SampleDesc.Count = 1;
+	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//定数バッファの生成
+	result = device->CreateCommittedResource(
+		&HeapProp,//ヒープ設定
+		D3D12_HEAP_FLAG_NONE,
+		&ResourceDesc,//リソース設定
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffTransform));
+	assert(SUCCEEDED(result));
+
+	//定数バッファのマッピング
+	result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);//マッピング
+	assert(SUCCEEDED(result));
 }
 
-void Line::Draw(ID3D12GraphicsCommandList* commandList)
+void Line::Draw(ID3D12GraphicsCommandList* commandList, XMMATRIX matView, XMMATRIX matProjection)
 {
+	constMapTransform->mat = matView * matProjection;
 	//パイプラインステートとルートシグネチャの設定コマンド
-		commandList->SetPipelineState(pipelineState.Get());
-		commandList->SetGraphicsRootSignature(rootSignature.Get());
-		//プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-		//頂点バッファビューの設定コマンド
-		commandList->IASetVertexBuffers(0, 1, &vbView);
-		//インデックスバッファビューの設定コマンド
-		commandList->IASetIndexBuffer(&ibView);
-		//描画コマンド
-		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
+	commandList->SetPipelineState(pipelineState.Get());
+	commandList->SetGraphicsRootSignature(rootSignature.Get());
+	//プリミティブ形状の設定コマンド
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+	//頂点バッファビューの設定コマンド
+	commandList->IASetVertexBuffers(0, 1, &vbView);
+	//定数バッファビュー（CBV）の設定コマンド
+	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+	
+	//インデックスバッファビューの設定コマンド
+	commandList->IASetIndexBuffer(&ibView);
+	//定数バッファビュー(CBV)の設定コマンド
+	commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+	//描画コマンド
+	commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//すべての頂点を使って描画
 }

@@ -34,7 +34,7 @@ class Line
 public:
 	void Initialize(ID3D12Device* device, HRESULT result);
 
-	void Draw(ID3D12GraphicsCommandList* commandList);
+	void Draw(ID3D12GraphicsCommandList* commandList, XMMATRIX matView, XMMATRIX matProjection);
 private:
 	//インデックスデータ
 	unsigned short indices[2] =
@@ -42,8 +42,15 @@ private:
 		//前
 		0,1,
 	};
+	//定数バッファ（行列用）
+	Microsoft::WRL::ComPtr<ID3D12Resource> constBuffTransform;
+	//定数バッファマップ（行列用）
+	ConstBufferDataTransform* constMapTransform;
 	ComPtr<ID3D12PipelineState> pipelineState = nullptr;
 	ComPtr<ID3D12RootSignature> rootSignature;
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 	D3D12_INDEX_BUFFER_VIEW ibView{};
+	ComPtr<ID3D12Resource> constBuffMaterial = nullptr;
+	//定数バッファのマッピング
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
 };
